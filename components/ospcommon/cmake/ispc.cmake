@@ -35,6 +35,7 @@ IF (NOT ISPC_EXECUTABLE)
   FOREACH(ver ${ISPC_VERSION_WORKING})
     FOREACH(suffix ${ISPC_DIR_SUFFIX})
       LIST(APPEND ISPC_DIR_HINT ${PROJECT_SOURCE_DIR}/../ispc-v${ver}-${suffix})
+      LIST(APPEND ISPC_DIR_HINT ${PROJECT_SOURCE_DIR}/sci_build/ispc-v${ver}-${suffix})
     ENDFOREACH()
   ENDFOREACH()
 
