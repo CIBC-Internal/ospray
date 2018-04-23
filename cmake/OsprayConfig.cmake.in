@@ -1,0 +1,9 @@
+#-----------------------------------------------------------------------------
+#
+# OsprayConfig.cmake - Ospray CMake configuration file for external projects.
+
+
+SET(SCI_OSPRAY_INCLUDE "@SCI_OSPRAY_INCLUDE@")
+SET(SCI_OSPRAY_LIBRARY "@SCI_OSPRAY_LIBRARY@")
+set(SCI_OSPRAY_LIBRARY_DIR "@SCI_OSPRAY_LIBRARY_DIR@")
+set(OSPRAY_USE_FILE "@OSPRAY_USE_FILE@")
