@@ -74,12 +74,12 @@ ADD_SUBDIRECTORY(ospray)
 # OSPRay sample apps; at the end: they may need modules
 ##############################################################
 
-OPTION(OSPRAY_ENABLE_APPS "Enable the 'apps' subtree in the build." ON)
-MARK_AS_ADVANCED(OSPRAY_ENABLE_APPS)
+#OPTION(OSPRAY_ENABLE_APPS "Enable the 'apps' subtree in the build." ON)
+#MARK_AS_ADVANCED(OSPRAY_ENABLE_APPS)
 
-IF (OSPRAY_ENABLE_APPS)
-  ADD_SUBDIRECTORY(apps)
-ENDIF()
+#IF (OSPRAY_ENABLE_APPS)
+  #ADD_SUBDIRECTORY(apps)
+#ENDIF()
 
 ##############################################################
 # OSPRay modules
@@ -89,12 +89,12 @@ ENDIF()
 # module (which by definition is OPTIONAL) - so those go
 # AT THE BACK, only AFTER ALL OTHER PARTS OF OSPRAY ARE BUILT
 ##############################################################
-ADD_SUBDIRECTORY(modules)
+#ADD_SUBDIRECTORY(modules)
 
 ##############################################################
 # Google Test
 ##############################################################
-ADD_SUBDIRECTORY(tests)
+#ADD_SUBDIRECTORY(tests)
 
 ##############################################################
 # add target for running clang-format
@@ -111,5 +111,17 @@ INSTALL(FILES ${CMAKE_BINARY_DIR}/OSPConfig.h
   COMPONENT devel
 )
 
+SET(SCI_OSPRAY_INCLUDE "${CMAKE_SOURCE_DIR}")
+#SET(SCI_OSPRAY_LIBRARY qwt CACHE INTERNAL "Qwt library" FORCE)
+
+#set(SCI_QWT_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
+#set(OSPRAY_USE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/UseOspray.cmake")
+
+#CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/CMake/QwtConfig.cmake.in"
+#  "${CMAKE_BINARY_DIR}/QwtConfig.cmake" @ONLY IMMEDIATE)
+#EXPORT(TARGETS ${SCI_QWT_LIBRARY} FILE QwtExports.cmake)
+
+
 # has to be last
 INCLUDE(CPack)
+
