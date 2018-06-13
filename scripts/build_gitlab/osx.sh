@@ -24,6 +24,7 @@ tar -xvf embree-3.2.0.x86_64.macosx.tar.gz
 
 # NOTE(jda) - using Internal tasking system here temporarily to avoid installing TBB
 cmake \
+-D CMAKE_PREFIX_PATH=./embree-3.2.0.x86_64.macosx
 -D OSPRAY_TASKING_SYSTEM=Internal \
 -D OSPRAY_ENABLE_TESTING=ON \
 -D OSPRAY_SG_CHOMBO=OFF \
