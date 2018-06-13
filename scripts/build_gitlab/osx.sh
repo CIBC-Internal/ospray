@@ -22,6 +22,10 @@ rm -rf *
 wget https://github.com/embree/embree/releases/download/v3.2.0/embree-3.2.0.x86_64.macosx.tar.gz
 tar -xvf embree-3.2.0.x86_64.macosx.tar.gz
 
+wget https://downloads.sourceforge.net/project/ispcmirror/v1.9.2/ispc-v1.9.2-osx.tar.gz && tar -xvf ispc-v1.9.2-osx.tar.gz && rm ispc-v1.9.2-osx.tar.gz
+
+export PATH="$TRAVIS_BUILD_DIR/build/ispc-v1.9.2-osx/:$PATH"
+
 # NOTE(jda) - using Internal tasking system here temporarily to avoid installing TBB
 cmake \
 -D embree_DIR:PATH=build/embree-3.2.0.x86_64.macosx \
