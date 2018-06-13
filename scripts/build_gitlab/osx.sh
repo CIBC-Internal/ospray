@@ -19,6 +19,9 @@ mkdir build
 cd build
 rm -rf *
 
+wget https://github.com/embree/embree/releases/download/v3.2.0/embree-3.2.0.x86_64.macosx.tar.gz
+tar -xvf embree-3.2.0.x86_64.macosx.tar.gz
+
 # NOTE(jda) - using Internal tasking system here temporarily to avoid installing TBB
 cmake \
 -D OSPRAY_TASKING_SYSTEM=Internal \

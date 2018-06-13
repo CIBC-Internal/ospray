@@ -17,6 +17,9 @@
 
 mkdir build
 cd build
+rm -rf *
+
+wget https://github.com/embree/embree/releases/download/v3.2.0/embree-3.2.0.x86_64.linux.tar.gz
 
 cmake \
   -D OSPRAY_BUILD_ISA=ALL \
