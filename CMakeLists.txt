@@ -73,9 +73,9 @@ ADD_SUBDIRECTORY(ospray)
 ##############################################################
 # OSPRay sample apps; at the end: they may need modules
 ##############################################################
-IF (OSPRAY_ENABLE_APPS)
-  ADD_SUBDIRECTORY(apps)
-ENDIF()
+#IF (OSPRAY_ENABLE_APPS)
+  #ADD_SUBDIRECTORY(apps)
+#ENDIF()
 
 ##############################################################
 # OSPRay modules
@@ -85,7 +85,7 @@ ENDIF()
 # module (which by definition is OPTIONAL) - so those go
 # AT THE BACK, only AFTER ALL OTHER PARTS OF OSPRAY ARE BUILT
 ##############################################################
-ADD_SUBDIRECTORY(modules)
+#ADD_SUBDIRECTORY(modules)
 
 ##############################################################
 # Google Test
