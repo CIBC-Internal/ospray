@@ -20,8 +20,11 @@ cd build
 rm -rf *
 
 wget https://github.com/embree/embree/releases/download/v3.2.0/embree-3.2.0.x86_64.linux.tar.gz
+tar -xvf embree-3.2.0.x86_64.linux.tar.gz
 
 cmake \
+  -D embree_DIR:PATH=build/embree-3.2.0.x86_64.linux \
+  -D OSPRAY_TASKING_SYSTEM=Internal \
   -D OSPRAY_BUILD_ISA=ALL \
   -D OSPRAY_ENABLE_TESTING=ON \
   -D OSPRAY_SG_CHOMBO=OFF \
