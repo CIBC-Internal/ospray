@@ -109,5 +109,17 @@ INSTALL(FILES ${CMAKE_BINARY_DIR}/OSPConfig.h
   COMPONENT devel
 )
 
+#######################
+# CIBC External stuff #
+#######################
+SET(SCI_OSPRAY_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL “Ospray include directories.")
+
+set(SCI_OSPRAY_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+#set(OSPRAY_USE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/UseOspray.cmake")
+
+configure_file(OsprayConfig.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/OsprayConfig.cmake" @ONLY)
+export(TARGETS ${SCI_OSPRAY_LIBRARY} FILE OsprayExports.cmake)
+
+
 # has to be last
 INCLUDE(CPack)
