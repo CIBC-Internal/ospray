@@ -8,6 +8,7 @@ build*
 tags
 .ycm_extra_conf.pyc
 *.autosave
+*DS_Store*
 *.gz
 *.rpm
 *.zip
@@ -26,3 +27,4 @@ readme.pdf
 !/modules/pluggableGeometryExample
 !/modules/simdGeometryExample
 .DS_Store
+Session.vim

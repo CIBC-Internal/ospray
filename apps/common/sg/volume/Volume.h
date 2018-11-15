@@ -26,6 +26,7 @@ namespace ospray {
     struct OSPSG_INTERFACE Volume : public Renderable
     {
       Volume();
+      virtual ~Volume() override;
 
       virtual std::string toString() const override;
 
@@ -46,7 +47,7 @@ namespace ospray {
       std::string toString() const override;
 
       //! return bounding box of all primitives
-      box3f bounds() const override;
+      box3f computeBounds() const override;
 
       void preCommit(RenderContext &ctx) override;
     };

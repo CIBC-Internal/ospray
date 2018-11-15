@@ -1,7 +1,7 @@
 OSPRay
 ======
 
-This is release v1.6.1 of OSPRay. For changes and new features see the
+This is release v1.7.2 of OSPRay. For changes and new features see the
 [changelog](CHANGELOG.md). Also visit http://www.ospray.org for more
 information.
 
@@ -37,7 +37,7 @@ via [OSPRay’s GitHub Issue
 Tracker](https://github.com/ospray/OSPRay/issues) (or, if you should
 happen to have a fix for it,you can also send us a pull request); for
 missing features please contact us via email at
-<ospray@googlegroups.com>.
+<a href="mailto:ospray@googlegroups.com" class="email">ospray@googlegroups.com</a>.
 
 For recent news, updates, and announcements, please see our complete
 [news/updates](https://www.ospray.org/news.html) page.
@@ -85,8 +85,9 @@ before you can build OSPRay you need the following prerequisites:
     Alternatively you can set CMake variable `OSPRAY_TASKING_SYSTEM` to
     `OpenMP`, `Internal`, or `Cilk` (icc only).
 -   OSPRay also heavily uses [Embree](https://embree.github.io/),
-    installing version 2.15 or newer is required. If Embree is not found
+    installing version 3.2 or newer is required. If Embree is not found
     by CMake its location can be hinted with the variable `embree_DIR`.
+    NOTE: Windows users should use Embree v3.2.2 or later.
 
 Depending on your Linux distribution you can install these dependencies
 using `yum` or `apt-get`. Some of these packages might already be
@@ -166,7 +167,7 @@ way to configure OSPRay and to create the Visual Studio solution files:
 
 -   Click “Configure” and select as generator the Visual Studio version
     you have, for Win64 (32 bit builds are not supported by OSPRay),
-    e.g. “Visual Studio 15 2017 Win64”.
+    e.g. “Visual Studio 15 2017 Win64”.
 
 -   If the configuration fails because some dependencies could not be
     found then follow the instructions given in the error message,
@@ -312,7 +313,7 @@ prefixed by convention with “`--osp:`”) are understood:
 </tr>
 <tr class="even">
 <td style="text-align: left;"><code>--osp:device:&lt;name&gt;</code></td>
-<td style="text-align: left;">use <code>name</code> as the type of device for OSPRay to create; e.g. <code>--osp:device:default</code> gives you the default local device; Note if the device to be used is defined in a module, remember to pass <code>--osp:module:&lt;name&gt;</code> first</td>
+<td style="text-align: left;">use <code>name</code> as the type of device for OSPRay to create; e.g. <code>--osp:device:default</code> gives you the default local device; Note if the device to be used is defined in a module, remember to pass <code>--osp:module:&lt;name&gt;</code> first</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;"><code>--osp:setaffinity &lt;n&gt;</code></td>
@@ -576,7 +577,7 @@ void ospRelease(OSPObject);
 ```
 
 This decreases its reference count and if the count reaches `0` the
-object will automatically get deleted.
+object will automatically get deleted. Passing `NULL` is not an error.
 
 ### Parameters
 
@@ -713,13 +714,13 @@ or else an `OSPVolume` handle.
 The common parameters understood by all volume variants are summarized
 in the table below.
 
-<table style="width:97%;">
+<table style="width:98%;">
 <caption>Configuration parameters shared by all volume types.</caption>
 <colgroup>
-<col style="width: 10%" />
-<col style="width: 32%" />
-<col style="width: 13%" />
-<col style="width: 40%" />
+<col style="width: 23%" />
+<col style="width: 27%" />
+<col style="width: 11%" />
+<col style="width: 34%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -731,66 +732,72 @@ in the table below.
 </thead>
 <tbody>
 <tr class="odd">
+<td style="text-align: left;">OSPTransferFunction</td>
+<td style="text-align: left;">transferFunction</td>
+<td style="text-align: right;"></td>
+<td style="text-align: left;"><a href="#transfer-function">transfer function</a> to use</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">vec2f</td>
 <td style="text-align: left;">voxelRange</td>
 <td style="text-align: right;"></td>
 <td style="text-align: left;">minimum and maximum of the scalar values</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">bool</td>
 <td style="text-align: left;">gradientShadingEnabled</td>
 <td style="text-align: right;">false</td>
 <td style="text-align: left;">volume is rendered with surface shading wrt. to normalized gradient</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">bool</td>
 <td style="text-align: left;">preIntegration</td>
 <td style="text-align: right;">false</td>
 <td style="text-align: left;">use pre-integration for <a href="#transfer-function">transfer function</a> lookups</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">bool</td>
 <td style="text-align: left;">singleShade</td>
 <td style="text-align: right;">true</td>
 <td style="text-align: left;">shade only at the point of maximum intensity</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">bool</td>
 <td style="text-align: left;">adaptiveSampling</td>
 <td style="text-align: right;">true</td>
 <td style="text-align: left;">adapt ray step size based on opacity</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">adaptiveScalar</td>
 <td style="text-align: right;">15</td>
 <td style="text-align: left;">modifier for adaptive step size</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">adaptiveMaxSamplingRate</td>
 <td style="text-align: right;">2</td>
 <td style="text-align: left;">maximum sampling rate for adaptive sampling</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">samplingRate</td>
 <td style="text-align: right;">0.125</td>
 <td style="text-align: left;">sampling rate of the volume (this is the minimum step size for adaptive sampling)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">vec3f</td>
 <td style="text-align: left;">specular</td>
 <td style="text-align: right;">gray 0.3</td>
 <td style="text-align: left;">specular color for shading</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">vec3f</td>
 <td style="text-align: left;">volumeClippingBoxLower</td>
 <td style="text-align: right;">disabled</td>
 <td style="text-align: left;">lower coordinate (in object-space) to clip the volume values</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">vec3f</td>
 <td style="text-align: left;">volumeClippingBoxUpper</td>
 <td style="text-align: right;">disabled</td>
@@ -1468,6 +1475,65 @@ respectively, would internally correspond to five links (`A-B`, `B-C`,
 `C-D`, `E-F`, and `F-G`), and would be specified via an array of
 vertices `[A,B,C,D,E,F,G]`, plus an array of link indices `[0,1,2,4,5]`.
 
+### Curves
+
+A geometry consisting of multiple curves is created by calling
+`ospNewGeometry` with type string “`curves`”. The parameters defining
+this geometry are listed in the table below.
+
+<table style="width:97%;">
+<caption>Parameters defining a curves geometry.</caption>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Name</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">string</td>
+<td style="text-align: left;">curveType</td>
+<td style="text-align: left;">“flat” (ray oriented), “round” (circular cross section), “ribbon” (normal oriented flat curve)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">string</td>
+<td style="text-align: left;">curveBasis</td>
+<td style="text-align: left;">“linear”, “bezier”, “bspline”, “hermite”</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">vec4f[]</td>
+<td style="text-align: left;">vertex</td>
+<td style="text-align: left;"><a href="#data">data</a> array of vertex position and radius</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">int32[]</td>
+<td style="text-align: left;">index</td>
+<td style="text-align: left;"><a href="#data">data</a> array of indices to the first vertex or tangent of a curve segment</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">vec3f[]</td>
+<td style="text-align: left;">vertex.normal</td>
+<td style="text-align: left;"><a href="#data">data</a> array of curve normals (only for “ribbon” curves)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">vec3f[]</td>
+<td style="text-align: left;">vertex.tangent</td>
+<td style="text-align: left;"><a href="#data">data</a> array of curve tangents (only for “hermite” curves)</td>
+</tr>
+</tbody>
+</table>
+
+: Parameters defining a curves geometry.
+
+See Embree documentation for discussion of curve types and data
+formatting.
+
 ### Isosurfaces
 
 OSPRay can directly render multiple isosurfaces of a volume without
@@ -1611,11 +1677,11 @@ created by passing the type string “`scivis`” or “`raytracer`” to
 understood by all renderers the SciVis renderer supports the following
 special parameters:
 
-<table style="width:98%;">
+<table style="width:97%;">
 <caption>Special parameters understood by the SciVis renderer.</caption>
 <colgroup>
-<col style="width: 18%" />
-<col style="width: 29%" />
+<col style="width: 16%" />
+<col style="width: 30%" />
 <col style="width: 17%" />
 <col style="width: 32%" />
 </colgroup>
@@ -1665,10 +1731,10 @@ special parameters:
 <td style="text-align: left;">background color and alpha (RGBA)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">OSPTexture2D</td>
+<td style="text-align: left;">OSPTexture</td>
 <td style="text-align: left;">maxDepthTexture</td>
 <td style="text-align: right;">NULL</td>
-<td style="text-align: left;">screen-sized float <a href="#texture">texture</a> with maximum far distance per pixel</td>
+<td style="text-align: left;">screen-sized float <a href="#texture">texture</a> with maximum far distance per pixel (use texture type ‘texture2d’)</td>
 </tr>
 </tbody>
 </table>
@@ -1705,10 +1771,10 @@ supports the following special parameters:
 <table style="width:97%;">
 <caption>Special parameters understood by the path tracer.</caption>
 <colgroup>
-<col style="width: 18%" />
-<col style="width: 22%" />
+<col style="width: 16%" />
+<col style="width: 23%" />
 <col style="width: 12%" />
-<col style="width: 43%" />
+<col style="width: 44%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -1732,7 +1798,7 @@ supports the following special parameters:
 <td style="text-align: left;">samples are clamped to this value before they are accumulated into the framebuffer</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">OSPTexture2D</td>
+<td style="text-align: left;">OSPTexture</td>
 <td style="text-align: left;">backplate</td>
 <td style="text-align: right;">NULL</td>
 <td style="text-align: left;"><a href="#texture">texture</a> image used as background, replacing visible lights in infinity (e.g. the <a href="#hdri-light">HDRI light</a>)</td>
@@ -1818,11 +1884,10 @@ feature/performance trade-offs:
 
 ### Lights
 
-To let the given `renderer` create a new light source of given type
-`type` use
+To create a new light source of given type `type` use
 
 ``` {.cpp}
-OSPLight ospNewLight(OSPRenderer renderer, const char *type);
+OSPLight ospNewLight3(const char *type);
 ```
 
 The call returns `NULL` if that type of light is not known by the
@@ -1844,7 +1909,7 @@ The following light types are supported by most OSPRay renderers.
 The distant light (or traditionally the directional light) is thought to
 be very far away (outside of the scene), thus its light arrives (almost)
 as parallel rays. It is created by passing the type string “`distant`”
-to `ospNewLight`. In addition to the [general parameters](#lights)
+to `ospNewLight3`. In addition to the [general parameters](#lights)
 understood by all lights the distant light supports the following
 special parameters:
 
@@ -1864,7 +1929,7 @@ about 0.53°.
 
 The sphere light (or the special case point light) is a light emitting
 uniformly in all directions. It is created by passing the type string
-“`sphere`” to `ospNewLight`. In addition to the [general
+“`sphere`” to `ospNewLight3`. In addition to the [general
 parameters](#lights) understood by all lights the sphere light supports
 the following special parameters:
 
@@ -1882,7 +1947,7 @@ tracer](#path-tracer)).
 #### Spot Light
 
 The spot light is a light emitting into a cone of directions. It is
-created by passing the type string “`spot`” to `ospNewLight`. In
+created by passing the type string “`spot`” to `ospNewLight3`. In
 addition to the [general parameters](#lights) understood by all lights
 the spot light supports the special parameters listed in the table.
 
@@ -1942,7 +2007,7 @@ tracer](#path-tracer)).
 
 The quad[^3] light is a planar, procedural area light source emitting
 uniformly on one side into the half space. It is created by passing the
-type string “`quad`” to `ospNewLight`. In addition to the [general
+type string “`quad`” to `ospNewLight3`. In addition to the [general
 parameters](#lights) understood by all lights the spot light supports
 the following special parameters:
 
@@ -1967,16 +2032,16 @@ shadows.
 
 The HDRI light is a textured light source surrounding the scene and
 illuminating it from infinity. It is created by passing the type string
-“`hdri`” to `ospNewLight`. In addition to the [parameter
+“`hdri`” to `ospNewLight3`. In addition to the [parameter
 `intensity`](#lights) the HDRI light supports the following special
 parameters:
 
 <table style="width:97%;">
 <caption>Special parameters accepted by the HDRI light.</caption>
 <colgroup>
-<col style="width: 20%" />
+<col style="width: 17%" />
 <col style="width: 9%" />
-<col style="width: 68%" />
+<col style="width: 69%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -1997,7 +2062,7 @@ parameters:
 <td style="text-align: left;">direction to which the center of the texture will be mapped to (analog to <a href="#panoramic-camera">panoramic camera</a>)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">OSPTexture2D</td>
+<td style="text-align: left;">OSPTexture</td>
 <td style="text-align: left;">map</td>
 <td style="text-align: left;">environment map in latitude / longitude format</td>
 </tr>
@@ -2017,7 +2082,7 @@ the HDRI light.
 The ambient light surrounds the scene and illuminates it from infinity
 with constant radiance (determined by combining the [parameters `color`
 and `intensity`](#lights)). It is created by passing the type string
-“`ambient`” to `ospNewLight`.
+“`ambient`” to `ospNewLight3`.
 
 Note that the [SciVis renderer](#scivis-renderer) uses ambient lights to
 control the color and intensity of the computed ambient occlusion (AO).
@@ -2057,14 +2122,14 @@ format](http://paulbourke.net/dataformats/mtl/) of Lightwave’s OBJ scene
 files. To create an OBJ material pass the type string “`OBJMaterial`” to
 `ospNewMaterial2`. Its main parameters are
 
-| Type         | Name      |    Default| Description                                        |
-|:-------------|:----------|----------:|:---------------------------------------------------|
-| vec3f        | Kd        |  white 0.8| diffuse color                                      |
-| vec3f        | Ks        |      black| specular color                                     |
-| float        | Ns        |         10| shininess (Phong exponent), usually in \[2–10^4^\] |
-| float        | d         |     opaque| opacity                                            |
-| vec3f        | Tf        |      black| transparency filter color                          |
-| OSPTexture2D | map\_Bump |       NULL| normal map                                         |
+| Type       | Name      |    Default| Description                                        |
+|:-----------|:----------|----------:|:---------------------------------------------------|
+| vec3f      | Kd        |  white 0.8| diffuse color                                      |
+| vec3f      | Ks        |      black| specular color                                     |
+| float      | Ns        |         10| shininess (Phong exponent), usually in \[2–10^4^\] |
+| float      | d         |     opaque| opacity                                            |
+| vec3f      | Tf        |      black| transparency filter color                          |
+| OSPTexture | map\_Bump |       NULL| normal map                                         |
 
 : Main parameters of the OBJ material.
 
@@ -2081,11 +2146,11 @@ the contrast in the final images is low (for example, the corners of a
 white room would hardly be discernible, as can be seen in the figure
 below).
 
-<img src="https://ospray.github.io/images/diffuse_rooms.png" alt="Comparison of diffuse rooms with 100% reflecting white paint (left) and realistic 80% reflecting white paint (right), which leads to in higher overall contrast. Note that exposure has been adjusted to achieve similar brightness levels." width="80.0%" />
-
-If present, the color component of [geometries](#geometries) is also
-used for the diffuse color `Kd` and the alpha component is also used for
-the opacity `d`.
+<figure>
+<img src="https://ospray.github.io/images/diffuse_rooms.png" alt="Comparison of diffuse rooms with 100% reflecting white paint (left) and realistic 80% reflecting white paint (right), which leads to in higher overall contrast. Note that exposure has been adjusted to achieve similar brightness levels." width="80.0%" /><figcaption>Comparison of diffuse rooms with 100% reflecting white paint (left) and realistic 80% reflecting white paint (right), which leads to in higher overall contrast. Note that exposure has been adjusted to achieve similar brightness levels.</figcaption>
+</figure>If present, the color component of [geometries](#geometries) is
+also used for the diffuse color `Kd` and the alpha component is also
+used for the opacity `d`.
 
 Note that currently only the path tracer implements colored transparency
 with `Tf`.
@@ -2103,9 +2168,9 @@ green towards the top of the texture image (see also the example image
 of a normal map). If this is not the case flip the normal map vertically
 or invert its green channel.
 
-<img src="https://ospray.github.io/images/normalmap_frustum.png" alt="Normal map representing an exalted square pyramidal frustum." width="60.0%" />
-
-All parameters (except `Tf`) can be textured by passing a
+<figure>
+<img src="https://ospray.github.io/images/normalmap_frustum.png" alt="Normal map representing an exalted square pyramidal frustum." width="60.0%" /><figcaption>Normal map representing an exalted square pyramidal frustum.</figcaption>
+</figure>All parameters (except `Tf`) can be textured by passing a
 [texture](#texture) handle, prefixed with “`map_`”. The fetched texels
 are multiplied by the respective parameter value. Texturing requires
 [geometries](#geometries) with texture coordinates, e.g. a [triangle
@@ -2113,11 +2178,11 @@ mesh](#triangle-mesh) with `vertex.texcoord` provided. The color
 textures `map_Kd` and `map_Ks` are typically in one of the sRGB gamma
 encoded formats, whereas textures `map_Ns` and `map_d` are usually in a
 linear format (and only the first component is used). Additionally, all
-textures support [texture transformations](#texture-transformations).
+textures support \[texture transformations\].
 
-<img src="https://ospray.github.io/images/material_OBJ.jpg" alt="Rendering of a OBJ material with wood textures." width="60.0%" />
-
-#### Principled
+<figure>
+<img src="https://ospray.github.io/images/material_OBJ.jpg" alt="Rendering of a OBJ material with wood textures." width="60.0%" /><figcaption>Rendering of a OBJ material with wood textures.</figcaption>
+</figure>#### Principled
 
 The Principled material is the most complex material offered by the
 [path tracer](#path-tracer), which is capable of producing a wide
@@ -2222,73 +2287,85 @@ table below.
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">normal</td>
 <td style="text-align: right;">1</td>
-<td style="text-align: left;">normal map/scale</td>
+<td style="text-align: left;">default normal map/scale for all layers</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">float</td>
+<td style="text-align: left;">baseNormal</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">base normal map/scale (overrides default normal)</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">bool</td>
 <td style="text-align: left;">thin</td>
 <td style="text-align: right;">false</td>
 <td style="text-align: left;">flag specifying whether the material is thin or solid</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">thickness</td>
 <td style="text-align: right;">1</td>
 <td style="text-align: left;">thickness of the material (thin only), affects the amount of color attenuation due to specular transmission</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">backlight</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: left;">amount of diffuse transmission (thin only) in [0–2], 1 is 50% reflection and 50% transmission, 2 is transmission only</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">coat</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: left;">clear coat layer weight in [0–1]</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">coatIor</td>
 <td style="text-align: right;">1.5</td>
 <td style="text-align: left;">clear coat index of refraction</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">vec3f</td>
 <td style="text-align: left;">coatColor</td>
 <td style="text-align: right;">white</td>
 <td style="text-align: left;">clear coat color tint</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">coatThickness</td>
 <td style="text-align: right;">1</td>
 <td style="text-align: left;">clear coat thickness, affects the amount of color attenuation</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">coatRoughness</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: left;">clear coat roughness in [0–1], 0 is perfectly smooth</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">coatNormal</td>
 <td style="text-align: right;">1</td>
-<td style="text-align: left;">clear coat normal map/scale</td>
+<td style="text-align: left;">clear coat normal map/scale (overrides default normal)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">sheen</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: left;">sheen layer weight in [0–1]</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">vec3f</td>
 <td style="text-align: left;">sheenColor</td>
 <td style="text-align: right;">white</td>
 <td style="text-align: left;">sheen color tint</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">float</td>
+<td style="text-align: left;">sheenTint</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">how much sheen is tinted from sheenColor towards baseColor</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">float</td>
@@ -2308,12 +2385,12 @@ table below.
 : Parameters of the Principled material.
 
 All parameters can be textured by passing a [texture](#texture) handle,
-suffixed with “`Map`” (e.g., “`baseColorMap`”); [texture
-transformations](#texture-transformations) are supported as well.
+suffixed with “`Map`” (e.g., “`baseColorMap`”); \[texture
+transformations\] are supported as well.
 
-<img src="https://ospray.github.io/images/material_Principled.jpg" alt="Rendering of a Principled coated brushed metal material with textured anisotropic rotation and a dust layer (sheen) on top." width="60.0%" />
-
-#### CarPaint
+<figure>
+<img src="https://ospray.github.io/images/material_Principled.jpg" alt="Rendering of a Principled coated brushed metal material with textured anisotropic rotation and a dust layer (sheen) on top." width="60.0%" /><figcaption>Rendering of a Principled coated brushed metal material with textured anisotropic rotation and a dust layer (sheen) on top.</figcaption>
+</figure>#### CarPaint
 
 The CarPaint material is a specialized version of the Principled
 material for rendering different types of car paints. To create a
@@ -2439,12 +2516,12 @@ CarPaint material, pass the type string “`CarPaint`” to
 : Parameters of the CarPaint material.
 
 All parameters can be textured by passing a [texture](#texture) handle,
-suffixed with “`Map`” (e.g., “`baseColorMap`”); [texture
-transformations](#texture-transformations) are supported as well.
+suffixed with “`Map`” (e.g., “`baseColorMap`”); \[texture
+transformations\] are supported as well.
 
-<img src="https://ospray.github.io/images/material_CarPaint.jpg" alt="Rendering of a pearlescent CarPaint material." width="60.0%" />
-
-#### Metal
+<figure>
+<img src="https://ospray.github.io/images/material_CarPaint.jpg" alt="Rendering of a pearlescent CarPaint material." width="60.0%" /><figcaption>Rendering of a pearlescent CarPaint material.</figcaption>
+</figure>#### Metal
 
 The [path tracer](#path-tracer) offers a physical metal, supporting
 changing roughness and realistic color shifts at edges. To create a
@@ -2522,13 +2599,12 @@ coefficients, based on data from https://refractiveindex.info/.
 
 The `roughness` parameter controls the variation of microfacets and thus
 how polished the metal will look. The roughness can be modified by a
-[texture](#texture) `map_roughness` ([texture
-transformations](#texture-transformations) are supported as well) to
-create interesting edging effects.
+[texture](#texture) `map_roughness` (\[texture transformations\] are
+supported as well) to create interesting edging effects.
 
-<img src="https://ospray.github.io/images/material_Metal.jpg" alt="Rendering of golden Metal material with textured roughness." width="60.0%" />
-
-#### Alloy
+<figure>
+<img src="https://ospray.github.io/images/material_Metal.jpg" alt="Rendering of golden Metal material with textured roughness." width="60.0%" /><figcaption>Rendering of golden Metal material with textured roughness.</figcaption>
+</figure>#### Alloy
 
 The [path tracer](#path-tracer) offers an alloy material, which behaves
 similar to [Metal](#metal), but allows for more intuitive and flexible
@@ -2550,12 +2626,12 @@ present, the color component of [geometries](#geometries) is also used
 for reflectivity at normal incidence `color`. As in [Metal](#metal) the
 `roughness` parameter controls the variation of microfacets and thus how
 polished the alloy will look. All parameters can be textured by passing
-a [texture](#texture) handle, prefixed with “`map_`”; [texture
-transformations](#texture-transformations) are supported as well.
+a [texture](#texture) handle, prefixed with “`map_`”; \[texture
+transformations\] are supported as well.
 
-<img src="https://ospray.github.io/images/material_Alloy.jpg" alt="Rendering of a fictional Alloy material with textured color." width="60.0%" />
-
-#### Glass
+<figure>
+<img src="https://ospray.github.io/images/material_Alloy.jpg" alt="Rendering of a fictional Alloy material with textured color." width="60.0%" /><figcaption>Rendering of a fictional Alloy material with textured color.</figcaption>
+</figure>#### Glass
 
 The [path tracer](#path-tracer) offers a realistic a glass material,
 supporting refraction and volumetric attenuation (i.e. the transparency
@@ -2575,9 +2651,9 @@ coefficients will be calculated from the user inputs in such a way, that
 the `attenuationColor` will be the result when white light traveled
 trough a glass of thickness `attenuationDistance`.
 
-<img src="https://ospray.github.io/images/material_Glass.jpg" alt="Rendering of a Glass material with orange attenuation." width="60.0%" />
-
-#### ThinGlass
+<figure>
+<img src="https://ospray.github.io/images/material_Glass.jpg" alt="Rendering of a Glass material with orange attenuation." width="60.0%" /><figcaption>Rendering of a Glass material with orange attenuation.</figcaption>
+</figure>#### ThinGlass
 
 The [path tracer](#path-tracer) offers a thin glass material useful for
 objects with just a single surface, most prominently windows. It models
@@ -2599,20 +2675,20 @@ type string “`ThinGlass`” to `ospNewMaterial2`. Its parameters are
 
 For convenience the attenuation is controlled the same way as with the
 [Glass](#glass) material. Additionally, the color due to attenuation can
-be modulated with a [texture](#texture) `map_attenuationColor` ([texture
-transformations](#texture-transformations) are supported as well). If
-present, the color component of [geometries](#geometries) is also used
-for the attenuation color. The `thickness` parameter sets the (virtual)
+be modulated with a [texture](#texture) `map_attenuationColor`
+(\[texture transformations\] are supported as well). If present, the
+color component of [geometries](#geometries) is also used for the
+attenuation color. The `thickness` parameter sets the (virtual)
 thickness and allows for easy exchange of parameters with the (real)
 [Glass](#glass) material; internally just the ratio between
 `attenuationDistance` and `thickness` is used to calculate the resulting
 attenuation and thus the material appearance.
 
-<img src="https://ospray.github.io/images/material_ThinGlass.jpg" alt="Rendering of a ThinGlass material with red attenuation." width="60.0%" />
-
-<img src="https://ospray.github.io/images/ColoredWindow.jpg" alt="Example image of a colored window made with textured attenuation of the ThinGlass material." width="60.0%" />
-
-#### MetallicPaint
+<figure>
+<img src="https://ospray.github.io/images/material_ThinGlass.jpg" alt="Rendering of a ThinGlass material with red attenuation." width="60.0%" /><figcaption>Rendering of a ThinGlass material with red attenuation.</figcaption>
+</figure><figure>
+<img src="https://ospray.github.io/images/ColoredWindow.jpg" alt="Example image of a colored window made with textured attenuation of the ThinGlass material." width="60.0%" /><figcaption>Example image of a colored window made with textured attenuation of the ThinGlass material.</figcaption>
+</figure>#### MetallicPaint
 
 The [path tracer](#path-tracer) offers a metallic paint material,
 consisting of a base coat with optional flakes and a clear coat. To
@@ -2630,20 +2706,20 @@ to `ospNewMaterial2`. Its parameters are listed in the table below.
 : Parameters of the MetallicPaint material.
 
 The color of the base coat `baseColor` can be textured by a
-[texture](#texture) `map_baseColor`, which also supports [texture
-transformations](#texture-transformations). If present, the color
-component of [geometries](#geometries) is also used for the color of the
-base coat. parameter `flakeAmount` controls the proportion of flakes in
-the base coat, so when setting it to 1 the `baseColor` will not be
-visible. The shininess of the metallic component is governed by
-`flakeSpread`, which controls the variation of the orientation of the
-flakes, similar to the `roughness` parameter of [Metal](#metal). Note
-that the effect of the metallic flakes is currently only computed on
-average, thus individual flakes are not visible.
+[texture](#texture) `map_baseColor`, which also supports \[texture
+transformations\]. If present, the color component of
+[geometries](#geometries) is also used for the color of the base coat.
+parameter `flakeAmount` controls the proportion of flakes in the base
+coat, so when setting it to 1 the `baseColor` will not be visible. The
+shininess of the metallic component is governed by `flakeSpread`, which
+controls the variation of the orientation of the flakes, similar to the
+`roughness` parameter of [Metal](#metal). Note that the effect of the
+metallic flakes is currently only computed on average, thus individual
+flakes are not visible.
 
-<img src="https://ospray.github.io/images/material_MetallicPaint.jpg" alt="Rendering of a MetallicPaint material." width="60.0%" />
-
-#### Luminous
+<figure>
+<img src="https://ospray.github.io/images/material_MetallicPaint.jpg" alt="Rendering of a MetallicPaint material." width="60.0%" /><figcaption>Rendering of a MetallicPaint material.</figcaption>
+</figure>#### Luminous
 
 The [path tracer](#path-tracer) supports the Luminous material which
 emits light uniformly in all directions and which can thus be used to
@@ -2652,23 +2728,41 @@ the type string “`Luminous`” to `ospNewMaterial2`. The amount of
 constant radiance that is emitted is determined by combining the general
 parameters of lights: [`color` and `intensity`](#lights).
 
-<img src="https://ospray.github.io/images/material_Luminous.jpg" alt="Rendering of a yellow Luminous material." width="60.0%" />
+<figure>
+<img src="https://ospray.github.io/images/material_Luminous.jpg" alt="Rendering of a yellow Luminous material." width="60.0%" /><figcaption>Rendering of a yellow Luminous material.</figcaption>
+</figure>### Texture
 
-### Texture
+OSPRay currently implements two texture types (`texture2d` and `volume`)
+and is open for extension to other types by applications. More types may
+be added in future releases.
 
-To create a new 2D texture of size `size` (in pixels) and with the given
-format and flags use
+To create a new texture use
 
 ``` {.cpp}
-OSPTexture2D ospNewTexture2D(const vec2i &size,
-                             const OSPTextureFormat,
-                             void *source = NULL,
-                             const uint32_t textureCreationFlags = 0);
+OSPTexture ospNewTexture(const char *type);
 ```
 
 The call returns `NULL` if the texture could not be created with the
-given parameters, or else an `OSPTexture2D` handle to the created
-texture. The supported texture formats are:
+given parameters, or else an `OSPTexture` handle to the created texture.
+
+#### Texture2D
+
+The `texture2D` texture type implements an image-based texture, where
+its parameters are as follows
+
+| Type    | Name  | Description                        |
+|:--------|:------|:-----------------------------------|
+| vec2f   | size  | size of the textures               |
+| int     | type  | `OSPTextureFormat` for the texture |
+| int     | flags | special attribute flags for this   |
+|         |       | texture, currently only responds   |
+|         |       | to `OSP_TEXTURE_FILTER_NEAREST` or |
+|         |       | no flags                           |
+| OSPData | data  | the actual texel data              |
+
+: Parameters of `texture2D` texture type
+
+The supported texture formats for `texture2d` are:
 
 | Name                  | Description                                                 |
 |:----------------------|:------------------------------------------------------------|
@@ -2681,19 +2775,33 @@ texture. The supported texture formats are:
 | OSP\_TEXTURE\_R8      | 8 bit \[0–255\] linear single component                     |
 | OSP\_TEXTURE\_R32F    | 32 bit float single component                               |
 
-: Supported texture formats by `ospNewTexture2D`, i.e. valid constants
-of type `OSPTextureFormat`.
+: Supported texture formats by `texture2D`, i.e. valid constants of type
+`OSPTextureFormat`.
 
 The texel data addressed by `source` starts with the texels in the lower
-left corner of the texture image, like in OpenGL. Similar to
-[data](#data) buffers the texel data can be shared by the application by
-specifying the `OSP_TEXTURE_SHARED_BUFFER` flag. Per default a texture
+left corner of the texture image, like in OpenGL. Per default a texture
 fetch is filtered by performing bi-linear interpolation of the nearest
-2×2 texels; if instead fetching only the nearest texel is desired
-(i.e. no filtering) then pass the `OSP_TEXTURE_FILTER_NEAREST` flag.
-Both texture creating flags can be combined with a bitwise OR.
+2×2 texels; if instead fetching only the nearest texel is desired (i.e.
+no filtering) then pass the `OSP_TEXTURE_FILTER_NEAREST` flag.
 
-### Texture Transformations
+#### TextureVolume
+
+The `volume` texture type implements texture lookups based on 3D world
+coordinates of the surface hit point on the associated geometry. If the
+given hit point is within the attached volume, the volume is sampled and
+classified with the transfer function attached to the volume. This
+implements the ability to visualize volume values (as colored by its
+transfer function) on arbitrary surfaces inside the volume (as opposed
+to an isosurface showing a particular value in the volume). Its
+parameters are as follows
+
+| Type      | Name   | Description                           |
+|:----------|:-------|:--------------------------------------|
+| OSPVolume | volume | volume used to generate color lookups |
+
+: Parameters of `volume` texture type
+
+### Texture2D Transformations
 
 All materials with textures also offer to manipulate the placement of
 these textures with the help of texture transformations. If so, this
@@ -2827,13 +2935,13 @@ plane and thus the plane of focus is oriented parallel to the front of
 buildings, the whole façade appears sharp, as can be seen in the example
 images below.
 
-<img src="https://ospray.github.io/images/camera_perspective.jpg" alt="Example image created with the perspective camera, featuring depth of field." width="60.0%" />
-
-<img src="https://ospray.github.io/images/camera_architectual.jpg" alt="Enabling the architectural flag corrects the perspective projection distortion, resulting in parallel vertical edges." width="60.0%" />
-
-<img src="https://ospray.github.io/images/camera_stereo.jpg" alt="Example 3D stereo image using stereoMode side-by-side." width="90.0%" />
-
-#### Orthographic Camera
+<figure>
+<img src="https://ospray.github.io/images/camera_perspective.jpg" alt="Example image created with the perspective camera, featuring depth of field." width="60.0%" /><figcaption>Example image created with the perspective camera, featuring depth of field.</figcaption>
+</figure><figure>
+<img src="https://ospray.github.io/images/camera_architectual.jpg" alt="Enabling the architectural flag corrects the perspective projection distortion, resulting in parallel vertical edges." width="60.0%" /><figcaption>Enabling the <code>architectural</code> flag corrects the perspective projection distortion, resulting in parallel vertical edges.</figcaption>
+</figure><figure>
+<img src="https://ospray.github.io/images/camera_stereo.jpg" alt="Example 3D stereo image using stereoMode side-by-side." width="90.0%" /><figcaption>Example 3D stereo image using <code>stereoMode</code> side-by-side.</figcaption>
+</figure>#### Orthographic Camera
 
 The orthographic camera implements a simple camera with orthographic
 projection, without support for depth of field or motion blur. It is
@@ -2855,9 +2963,9 @@ the scene that is captured in the image, can be controlled with the
 and `imageEnd`, and both methods can be combined. In any case, the
 `aspect` ratio needs to be set accordingly to get an undistorted image.
 
-<img src="https://ospray.github.io/images/camera_orthographic.jpg" alt="Example image created with the orthographic camera." width="60.0%" />
-
-#### Panoramic Camera
+<figure>
+<img src="https://ospray.github.io/images/camera_orthographic.jpg" alt="Example image created with the orthographic camera." width="60.0%" /><figcaption>Example image created with the orthographic camera.</figcaption>
+</figure>#### Panoramic Camera
 
 The panoramic camera implements a simple camera without support for
 motion blur. It captures the complete surrounding with a latitude /
@@ -2866,9 +2974,9 @@ of 2:1. A panoramic camera is created by passing the type string
 “`panoramic`” to `ospNewCamera`. It is placed and oriented in the scene
 by using the [general parameters](#cameras) understood by all cameras.
 
-<img src="https://ospray.github.io/images/camera_panoramic.jpg" alt="Latitude / longitude map created with the panoramic camera." width="90.0%" />
-
-### Picking
+<figure>
+<img src="https://ospray.github.io/images/camera_panoramic.jpg" alt="Latitude / longitude map created with the panoramic camera." width="90.0%" /><figcaption>Latitude / longitude map created with the panoramic camera.</figcaption>
+</figure>### Picking
 
 To get the world-space position of the geometry (if any) seen at \[0–1\]
 normalized screen-space pixel coordinates `screenPos` use
@@ -2923,17 +3031,19 @@ The parameter `frameBufferChannels` specifies which channels the
 framebuffer holds, and can be combined together by bitwise OR from the
 values of `OSPFrameBufferChannel` listed in the table below.
 
-| Name              | Description                                                                                     |
-|:------------------|:------------------------------------------------------------------------------------------------|
-| OSP\_FB\_COLOR    | RGB color including alpha                                                                       |
-| OSP\_FB\_DEPTH    | euclidean distance to the camera (*not* to the image plane), as linear 32 bit float             |
-| OSP\_FB\_ACCUM    | accumulation buffer for progressive refinement                                                  |
-| OSP\_FB\_VARIANCE | estimate of the current variance if OSP\_FB\_ACCUM is also present, see [rendering](#rendering) |
+| Name              | Description                                                                                              |
+|:------------------|:---------------------------------------------------------------------------------------------------------|
+| OSP\_FB\_COLOR    | RGB color including alpha                                                                                |
+| OSP\_FB\_DEPTH    | euclidean distance to the camera (\_not\_ to the image plane), as linear 32 bit float                    |
+| OSP\_FB\_ACCUM    | accumulation buffer for progressive refinement                                                           |
+| OSP\_FB\_VARIANCE | for estimation of the current noise level if OSP\_FB\_ACCUM is also present, see [rendering](#rendering) |
+| OSP\_FB\_NORMAL   | accumulated screen-space normal of the first hit, as vec3f                                               |
+| OSP\_FB\_ALBEDO   | accumulated material albedo (color without illumination) at the first hit, as vec3f                      |
 
 : Framebuffer channels constants (of type `OSPFrameBufferChannel`),
 naming optional information the framebuffer can store. These values can
 be combined by bitwise OR when passed to `ospNewFrameBuffer` or
-`ospClearFrameBuffer`.
+`ospFrameBufferClear`.
 
 If a certain channel value is *not* specified, the given buffer channel
 will not be present. Note that ospray makes a very clear distinction
@@ -2961,7 +3071,7 @@ const void *ospMapFrameBuffer(OSPFrameBuffer,
                               const OSPFrameBufferChannel = OSP_FB_COLOR);
 ```
 
-Note that only `OSP_FB_COLOR` or `OSP_FB_DEPTH` can be mapped. The
+Note that `OSP_FB_ACCUM` or `OSP_FB_VARIANCE` cannot be mapped. The
 origin of the screen coordinate system in OSPRay is the lower left
 corner (as in OpenGL), thus the first pixel addressed by the returned
 pointer is the lower left pixel of the image.
@@ -2980,10 +3090,10 @@ void ospFrameBufferClear(OSPFrameBuffer, const uint32_t frameBufferChannels);
 ```
 
 When selected, `OSP_FB_COLOR` will clear the color buffer to black
-`(0, 0, 0, 0)`, `OSP_FB_DEPTH` will clear the depth buffer to `inf`,
-`OSP_FB_ACCUM` will clear the accumulation buffer to black, resets the
-accumulation counter `accumID` and also clears the variance buffer (if
-present) to `inf`.
+`(0, 0, 0, 0)`, `OSP_FB_DEPTH` will clear the depth buffer to `inf`.
+`OSP_FB_ACCUM` will clear *all* accumulating buffers (`OSP_FB_VARIANCE`,
+`OSP_FB_NORMAL`, and `OSP_FB_ALBEDO`, if present) and resets the
+accumulation counter `accumID`.
 
 ### Pixel Operation {#pixel-operation .unnumbered}
 
@@ -3005,7 +3115,7 @@ To set a pixel operation to the given framebuffer use
 void ospSetPixelOp(OSPFrameBuffer, OSPPixelOp);
 ```
 
-#### Tone Mapper
+#### Tone Mapper {#tone-mapper .unnumbered}
 
 The tone mapper is a pixel operation which implements a generic filmic
 tone mapping operator. Using the default parameters it approximates the
@@ -3107,6 +3217,32 @@ additionally the framebuffer has an `OSP_FB_VARIANCE` channel then
 rendered image, otherwise `inf` is returned. The estimated variance can
 be used by the application as a quality indicator and thus to decide
 whether to stop or to continue progressive rendering.
+
+### Progress and Cancel {#progress-and-cancel .unnumbered}
+
+To be informed about the progress of rendering the current frame the
+application can register a callback function of type
+
+``` {.cpp}
+typedef int (*OSPProgressFunc)(void* userPtr, const float progress);
+```
+
+via
+
+``` {.cpp}
+void ospSetProgressFunc(OSPProgressFunc, void* userPtr);
+```
+
+The provided user pointer `userPtr` is passed as first argument to the
+callback function[^6] and the reported progress is in (0–1\]. If the
+callback function returns zero than the application requests to cancel
+rendering, i.e. the current `ospRenderFrame` will return at the first
+opportunity and the content of the frambuffer will be undefined.
+Therefore, better clear the framebuffer with `ospFrameBufferClear` then
+before a subsequent call of `ospRenderFrame`.
+
+Passing `NULL` as `OSPProgressFunc` function pointer disables the
+progress callback.
 
 Parallel Rendering with MPI
 ===========================
@@ -3528,7 +3664,7 @@ Tutorial
 --------
 
 A minimal working example demonstrating how to use OSPRay can be found
-at `apps/ospTutorial.c`[^6]. On Linux build it in the build directory
+at `apps/ospTutorial.c`[^7]. On Linux build it in the build directory
 with
 
     gcc -std=c99 ../apps/ospTutorial.c -I ../ospray/include -I .. \
@@ -3716,6 +3852,9 @@ page.
 [^5]: This is currently not implemented, i.e. all channels of the
     framebuffer are always updated.
 
-[^6]: A C++ version that uses the C++ convenience wrappers of OSPRay’s
+[^6]: That way applications can also register a member function of a C++
+    class together with the `this` pointer as `userPtr`.
+
+[^7]: A C++ version that uses the C++ convenience wrappers of OSPRay’s
     C99 API via `include/ospray/ospray_cpp.h` is available at
     `apps/ospTutorial.cpp`.
