@@ -28,6 +28,6 @@ install:
 # - if [ "${TRAVIS_OS_NAME}" = "linux" -a "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 
 script: 
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scripts/build_gitlab/osx.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scripts/build_gitlab/osx_travis.sh; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scripts/build_gitlab/linux.sh; fi
 
