@@ -508,4 +508,4 @@ ENDIF()
 # Configure find_package files
 ##############################################################
 
-#INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ospray_cmake_config.cmake)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ospray_cmake_config.cmake)

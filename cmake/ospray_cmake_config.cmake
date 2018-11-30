@@ -16,19 +16,19 @@
 
 # Version header
 CONFIGURE_FILE(
-  ${CMAKE_SOURCE_DIR}/ospray/version.h.in
-  ${CMAKE_BINARY_DIR}/ospray/version.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/version.h
   @ONLY
 )
 
-INSTALL(FILES ${CMAKE_BINARY_DIR}/ospray/version.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ospray
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   COMPONENT devel
 )
 
 # CMake config module
-SET(OSPRAY_MODULE_CONFIG_INPUT_DIR  ${CMAKE_SOURCE_DIR}/cmake/ospray_cmake_config)
-SET(OSPRAY_MODULE_CONFIG_OUTPUT_DIR ${CMAKE_BINARY_DIR}/cmake)
+SET(OSPRAY_MODULE_CONFIG_INPUT_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ospray_cmake_config)
+SET(OSPRAY_MODULE_CONFIG_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/../cmake)
 
 SET(OSPRAY_MODULE_FILES
   osprayConfig.cmake
@@ -72,14 +72,14 @@ ENDFOREACH()
 
 INSTALL(FILES
   ${OSPRAY_MODULE_INSTALL_FILES}
-  ${CMAKE_SOURCE_DIR}/components/ospcommon/cmake/FindTBB.cmake
-  ${CMAKE_SOURCE_DIR}/components/ospcommon/cmake/clang.cmake
-  ${CMAKE_SOURCE_DIR}/components/ospcommon/cmake/icc.cmake
-  ${CMAKE_SOURCE_DIR}/components/ospcommon/cmake/ispc.cmake
-  ${CMAKE_SOURCE_DIR}/components/ospcommon/cmake/gcc.cmake
-  ${CMAKE_SOURCE_DIR}/components/ospcommon/cmake/msvc.cmake
-  ${CMAKE_SOURCE_DIR}/components/ospcommon/cmake/macros.cmake#NOTE(jda) - hack!
-  ${CMAKE_SOURCE_DIR}/cmake/ospray_macros.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/FindTBB.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/clang.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/icc.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/ispc.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/gcc.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/msvc.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/macros.cmake#NOTE(jda) - hack!
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ospray_macros.cmake
   DESTINATION ${OSPRAY_CMAKECONFIG_DIR}
   COMPONENT devel
 )
