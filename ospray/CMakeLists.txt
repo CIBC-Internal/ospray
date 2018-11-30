@@ -27,16 +27,16 @@ FIND_PACKAGE(Threads REQUIRED)
 # -------------------------------------------------------
 
 INCLUDE_DIRECTORIES(
-  ${CMAKE_SOURCE_DIR}/ospray/include
-  ${CMAKE_SOURCE_DIR}/ospray
-  ${CMAKE_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../
+  ${CMAKE_CURRENT_SOURCE_DIR}
   ${PROJECT_BINARY_DIR}
   ${EMBREE_INCLUDE_DIRS}
 )
 INCLUDE_DIRECTORIES_ISPC(
-  ${CMAKE_SOURCE_DIR}/ospray/include
-  ${CMAKE_SOURCE_DIR}/ospray
-  ${CMAKE_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../
+  ${CMAKE_CURRENT_SOURCE_DIR}
   ${PROJECT_BINARY_DIR}
   ${EMBREE_INCLUDE_DIRS}
 )
@@ -508,4 +508,4 @@ ENDIF()
 # Configure find_package files
 ##############################################################
 
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/ospray_cmake_config.cmake)
+#INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ospray_cmake_config.cmake)

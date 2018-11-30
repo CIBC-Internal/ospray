@@ -103,8 +103,8 @@ INCLUDE(clang-format)
 
 # create a configure file that both ospray and ispc can read the cmake config
 # from needs to be at the end, after all cache variables have been set
-CONFIGURE_FILE(ospray/common/OSPConfig.h.in OSPConfig.h)
-INSTALL(FILES ${CMAKE_BINARY_DIR}/OSPConfig.h
+CONFIGURE_FILE(ospray/common/OSPConfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/OSPConfig.h)
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/OSPConfig.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ospray
   COMPONENT devel
 )
