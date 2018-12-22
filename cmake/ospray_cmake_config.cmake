@@ -72,14 +72,14 @@ ENDFOREACH()
 
 INSTALL(FILES
   ${OSPRAY_MODULE_INSTALL_FILES}
-  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/FindTBB.cmake
-  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/clang.cmake
-  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/icc.cmake
-  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/ispc.cmake
-  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/gcc.cmake
-  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/msvc.cmake
-  ${CMAKE_CURRENT_SOURCE_DIR}/components/ospcommon/cmake/macros.cmake#NOTE(jda) - hack!
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ospray_macros.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/../components/ospcommon/cmake/FindTBB.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/../components/ospcommon/cmake/clang.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/../components/ospcommon/cmake/icc.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/../components/ospcommon/cmake/ispc.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/../components/ospcommon/cmake/gcc.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/../components/ospcommon/cmake/msvc.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/../components/ospcommon/cmake/macros.cmake#NOTE(jda) - hack!
+  ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ospray_macros.cmake
   DESTINATION ${OSPRAY_CMAKECONFIG_DIR}
   COMPONENT devel
 )
