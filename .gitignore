@@ -3,7 +3,8 @@
 bin
 bin_local
 *.user*
-build*
+./build*
+install*
 *.sw?
 tags
 .ycm_extra_conf.pyc
@@ -23,8 +24,12 @@ ispc
 readme.pdf
 !/modules
 /modules/*
-!/modules/mpi
 !/modules/pluggableGeometryExample
 !/modules/simdGeometryExample
 .DS_Store
 Session.vim
+!/modules/denoiser
+*.vim
+.idea/
+premake.local.*
+cmake-build*/

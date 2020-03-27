@@ -1,134 +1,109 @@
-// ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
+// Copyright 2009-2019 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
 
+#include "common/Intersect.ih"
 #include "volume/Volume.ih"
 
-void Volume_Constructor(Volume *uniform self,
-                        /*! pointer to the c++-equivalent class of this entity */
-                        void *uniform cppEquivalent
-                        )
+unmasked void Volume_embreeBounds(
+    const RTCBoundsFunctionArguments *uniform args)
+{
+  Volume *uniform self = (Volume * uniform) args->geometryUserPtr;
+  box3fa *uniform out = (box3fa * uniform) args->bounds_o;
+
+  *out = make_box3fa(self->boundingBox);
+}
+
+unmasked void Volume_intersect_kernel(
+    const RTCIntersectFunctionNArguments *uniform args)
+{
+  // make sure to set the mask
+  if (!args->valid[programIndex])
+    return;
+
+  Volume *uniform self = (Volume * uniform) args->geometryUserPtr;
+  varying Ray *uniform ray = (varying Ray * uniform) args->rayhit;
+
+  EmbreeIntersectionContext *uniform ctx =
+      (EmbreeIntersectionContext * uniform) args->context;
+
+  varying VolumeIntervals *uniform vIntervals =
+      (varying VolumeIntervals * uniform) ctx->userPtr;
+
+  varying VolumeInterval *varying vInterval = (varying VolumeInterval
+      * varying)(vIntervals->intervals + vIntervals->numVolumeIntervals);
+
+  uniform int primID = args->primID;
+
+  box3f *uniform box = &self->boundingBox;
+
+  const Intersections isect = intersectBox(ray->org, ray->dir, *box);
+
+  const float t_min = max(ray->t0, isect.entry.t);
+  const float t_max = min(ray->t, isect.exit.t);
+
+  if (t_min < t_max) {
+    ray->instID = args->context->instID[0];
+    ray->geomID = self->volumeID;
+    ray->primID = 0;
+
+    vInterval->primID = 0;
+    vInterval->geomID = self->volumeID;
+    vInterval->instID = args->context->instID[0];
+    vIntervals->numVolumeIntervals++;
+    vInterval->interval.lower = t_min;
+    vInterval->interval.upper = t_max;
+  }
+}
+
+void Volume_Constructor(Volume *uniform self, void *uniform cppEquivalent)
 {
   self->cppEquivalent = cppEquivalent;
-
-  // default sampling step; should be set to correct value by derived volume.
-  self->samplingStep = 1.f;
-
-  // default bounding box; should be set to correct value by derived volume.
   self->boundingBox = make_box3f(make_vec3f(0.f), make_vec3f(1.f));
-
-  // other defaults are set during Volume::updateEditableParameters().
+  self->volumeID = -1;
+  self->vklVolume = NULL;
 }
 
-export void Volume_setGradientShadingEnabled(void *uniform _self, const uniform bool &value)
+export void Volume_getBoundingBox(
+    uniform box3f *uniform ret, void *uniform _self)
 {
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->gradientShadingEnabled = value;
-}
+  uniform Volume *uniform self = (uniform Volume * uniform) _self;
 
-export void Volume_setPreIntegration(void *uniform _self, const uniform bool &value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->preIntegration = value;
-}
-
-export void Volume_setSingleShade(void *uniform _self, const uniform bool &value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->singleShade = value;
-}
-
-export void Volume_setAdaptiveSampling(void *uniform _self, const uniform bool &value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->adaptiveSampling = value;
-}
-
-export void Volume_setAdaptiveScalar(void *uniform _self, const uniform float &value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->adaptiveScalar = value;
-}
-
-export void Volume_setAdaptiveMaxSamplingRate(void *uniform _self, const uniform float &value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->adaptiveMaxSamplingRate = value;
-}
-
-export void Volume_setAdaptiveBacktrack(void *uniform _self, const uniform float &value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->adaptiveBacktrack = value;
-}
-
-export void Volume_setSamplingRate(void *uniform _self, const uniform float value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->samplingRate = value;
-}
-
-export void Volume_setSpecular(void *uniform _self, const uniform vec3f &value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->specular = value;
-}
-
-export void Volume_setNs(void *uniform _self, const uniform float &value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->ns = value;
-}
-
-export void Volume_setTransferFunction(void *uniform _self, void *uniform value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->transferFunction = (TransferFunction *uniform) value;
-}
-
-export void Volume_setVolumeClippingBox(void *uniform _self, const uniform box3f &value)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->volumeClippingBox = value;
-}
-
-export void Volume_setAffineTransformations(void *uniform _self,
-					    const uniform AffineSpace3f &xfm,
-					    const uniform AffineSpace3f &rcp_xfm)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
-  self->xfm = xfm;
-  self->rcp_xfm = rcp_xfm;
-}
-
-export void Volume_getBoundingBox(uniform box3f *uniform ret, void *uniform _self)
-{
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
   *ret = self->boundingBox;
 }
 
-export void Volume_computeSamples(void *uniform _self,
-                                  uniform float *uniform *uniform results,
-                                  const uniform vec3f *uniform worldCoordinates,
-                                  const uniform size_t &count)
+export void Volume_set(void *uniform _self, void *uniform _embreeGeometry)
 {
-  uniform Volume *uniform self = (uniform Volume *uniform)_self;
+  Volume *uniform self = (Volume * uniform) _self;
 
-  foreach (i=0 ... count) {
-    vec3f c = worldCoordinates[i];
-    float sample = self->sample(self, c);
-    (*results)[i] = sample;
-  }
+  RTCGeometry geom = (RTCGeometry)_embreeGeometry;
+
+  rtcSetGeometryUserData(geom, self);
+  rtcSetGeometryUserPrimitiveCount(geom, 1);
+  rtcSetGeometryBoundsFunction(
+      geom, (uniform RTCBoundsFunction)&Volume_embreeBounds, self);
+  rtcSetGeometryIntersectFunction(
+      geom, (uniform RTCIntersectFunctionN)&Volume_intersect_kernel);
+  rtcCommitGeometry(geom);
+}
+
+export void Volume_set_geomID(void *uniform _self, uniform int32 geomID)
+{
+  Volume *uniform self = (Volume * uniform) _self;
+  self->volumeID = geomID;
+}
+
+export void *uniform Volume_createInstance_vklVolume(
+    void *uniform cppEquivalent)
+{
+  Volume *uniform self = uniform new Volume;
+  Volume_Constructor(self, cppEquivalent);
+  return self;
+}
+
+export void Volume_set_vklVolume(
+    void *uniform _self, void *uniform vklVolume, box3f *uniform bounds)
+{
+  Volume *uniform self = (Volume * uniform) _self;
+  self->vklVolume = (VKLVolume)vklVolume;
+  self->boundingBox = *bounds;
 }

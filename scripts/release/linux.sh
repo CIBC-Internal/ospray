@@ -1,23 +1,9 @@
 #!/bin/bash
-## ======================================================================== ##
-## Copyright 2014-2018 Intel Corporation                                    ##
-##                                                                          ##
-## Licensed under the Apache License, Version 2.0 (the "License");          ##
-## you may not use this file except in compliance with the License.         ##
-## You may obtain a copy of the License at                                  ##
-##                                                                          ##
-##     http://www.apache.org/licenses/LICENSE-2.0                           ##
-##                                                                          ##
-## Unless required by applicable law or agreed to in writing, software      ##
-## distributed under the License is distributed on an "AS IS" BASIS,        ##
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. ##
-## See the License for the specific language governing permissions and      ##
-## limitations under the License.                                           ##
-## ======================================================================== ##
+## Copyright 2014-2020 Intel Corporation
+## SPDX-License-Identifier: Apache-2.0
 
 #### Helper functions ####
 
-# check version of symbols
 function check_symbols
 {
   for sym in `nm $1 | grep $2_`
@@ -46,88 +32,116 @@ function check_symbols
   done
 }
 
+function check_imf
+{
+for lib in "$@"
+do
+  if [ -n "`ldd $lib | fgrep libimf.so`" ]; then
+    echo "Error: dependency to 'libimf.so' found"
+    exit 3
+  fi
+done
+}
+
 #### Set variables for script ####
 
 ROOT_DIR=$PWD
 DEP_DIR=$ROOT_DIR/deps
+DEP_BUILD_DIR=$ROOT_DIR/build_deps
+OSPRAY_PKG_BASE=ospray-2.0.1.x86_64.linux
+OSPRAY_BUILD_DIR=$ROOT_DIR/build_release
+INSTALL_DIR=$ROOT_DIR/install/$OSPRAY_PKG_BASE
+THREADS=`nproc`
 
-DEP_LOCATION=http://sdvis.org/ospray/download/dependencies/linux
-DEP_EMBREE=embree-3.1.0.x86_64.linux
-DEP_ISPC=ispc-v1.9.2-linux
-DEP_TBB=tbb2018_20171205oss
-DEP_TARBALLS="$DEP_EMBREE.tar.gz $DEP_ISPC.tar.gz ${DEP_TBB}_lin.tgz"
+#### Cleanup any existing directories ####
 
+rm -rf $DEP_DIR
+rm -rf $DEP_BUILD_DIR
+rm -rf $OSPRAY_BUILD_DIR
+rm -rf $INSTALL_DIR
 
-# set compiler if the user hasn't explicitly set CC and CXX
-if [ -z $CC ]; then
-  echo "***NOTE: Defaulting to use icc/icpc!"
-  echo -n "         Please set env variables 'CC' and 'CXX' to"
-  echo " a different supported compiler (gcc/clang) if desired."
-  export CC=icc
-  export CXX=icpc
-fi
+#### Build dependencies ####
 
-#### Fetch dependencies (TBB+Embree+ISPC) ####
+mkdir $DEP_BUILD_DIR
+cd $DEP_BUILD_DIR
 
-mkdir -p $DEP_DIR
-cd $DEP_DIR
+# NOTE(jda) - Some Linux OSs need to have lib/ on LD_LIBRARY_PATH at build time
+export LD_LIBRARY_PATH=$DEP_DIR/lib:${LD_LIBRARY_PATH}
 
-for dep in $DEP_TARBALLS ; do
-  wget --progress=dot:mega -c $DEP_LOCATION/$dep
-  tar -xaf $dep
-done
-export embree_DIR=$DEP_DIR/$DEP_EMBREE
+cmake --version
+
+cmake \
+  "$@" \
+  -D BUILD_DEPENDENCIES_ONLY=ON \
+  -D CMAKE_INSTALL_PREFIX=$DEP_DIR \
+  -D CMAKE_INSTALL_LIBDIR=lib \
+  -D BUILD_EMBREE_FROM_SOURCE=OFF \
+  -D BUILD_OIDN=ON \
+  -D BUILD_OIDN_FROM_SOURCE=OFF \
+  -D INSTALL_IN_SEPARATE_DIRECTORIES=OFF \
+  ../scripts/superbuild
+
+cmake --build .
 
 cd $ROOT_DIR
 
 #### Build OSPRay ####
 
-mkdir -p build_release
-cd build_release
+mkdir -p $OSPRAY_BUILD_DIR
+cd $OSPRAY_BUILD_DIR
 
 # Clean out build directory to be sure we are doing a fresh build
 rm -rf *
 
-# set release and RPM settings
-cmake \
--D OSPRAY_BUILD_ISA=ALL \
--D OSPRAY_MODULE_MPI=ON \
--D OSPRAY_MODULE_MPI_APPS=OFF \
--D TBB_ROOT=$DEP_DIR/$DEP_TBB \
--D ISPC_EXECUTABLE=$DEP_DIR/$DEP_ISPC/ispc \
--D OSPRAY_SG_CHOMBO=OFF \
--D OSPRAY_SG_OPENIMAGEIO=OFF \
--D OSPRAY_SG_VTK=OFF \
--D OSPRAY_ZIP_MODE=OFF \
--D OSPRAY_INSTALL_DEPENDENCIES=OFF \
--D CPACK_PACKAGING_INSTALL_PREFIX=/usr \
-..
+# Setup environment variables for dependencies
+export OSPCOMMON_TBB_ROOT=$DEP_DIR
+export ospcommon_DIR=$DEP_DIR
+export embree_DIR=$DEP_DIR
+export glfw3_DIR=$DEP_DIR
+export openvkl_DIR=$DEP_DIR
+export OpenImageDenoise_DIR=$DEP_DIR
 
-# create RPM files
-make -j `nproc` preinstall
+# set release settings
+cmake -L \
+  -D CMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+  -D ISPC_EXECUTABLE=$DEP_DIR/bin/ispc \
+  -D OSPRAY_BUILD_ISA=ALL \
+  -D OSPRAY_MODULE_DENOISER=ON \
+  -D OSPRAY_INSTALL_DEPENDENCIES=OFF \
+  -D OSPRAY_ZIP_MODE=ON \
+  -D CPACK_PACKAGING_INSTALL_PREFIX=/ \
+  -D CMAKE_INSTALL_INCLUDEDIR=include \
+  -D CMAKE_INSTALL_LIBDIR=lib \
+  -D CMAKE_INSTALL_DOCDIR=doc \
+  -D CMAKE_INSTALL_BINDIR=bin \
+  ..
 
-check_symbols libospray.so GLIBC   2 4 0
-check_symbols libospray.so GLIBCXX 3 4 11
-check_symbols libospray.so CXXABI  1 3 0
+# build OSPRay
+make -j $THREADS install
 
-make -j `nproc` package
+# verify libs
+check_symbols $INSTALL_DIR/lib/libospray.so GLIBC   2 14 0
+check_symbols $INSTALL_DIR/lib/libospray.so GLIBCXX 3 4 15
+check_symbols $INSTALL_DIR/lib/libospray.so CXXABI  1 3 5
 
-# read OSPRay version
-OSPRAY_VERSION=`sed -n 's/#define OSPRAY_VERSION "\(.*\)"/\1/p' ospray/version.h`
+check_symbols $INSTALL_DIR/lib/libospray_module_ispc.so GLIBC   2 14 0
+check_symbols $INSTALL_DIR/lib/libospray_module_ispc.so GLIBCXX 3 4 15
+check_symbols $INSTALL_DIR/lib/libospray_module_ispc.so CXXABI  1 3 5
 
-tar czf ospray-${OSPRAY_VERSION}.x86_64.rpm.tar.gz ospray-*-${OSPRAY_VERSION}-*.rpm
+check_imf $INSTALL_DIR/lib/libospray.so
+check_imf $INSTALL_DIR/lib/libospray_module_ispc.so
 
-# change settings for zip mode
-cmake \
--D OSPRAY_ZIP_MODE=ON \
--D OSPRAY_INSTALL_DEPENDENCIES=ON \
--D CPACK_PACKAGING_INSTALL_PREFIX=/ \
--D CMAKE_INSTALL_INCLUDEDIR=include \
--D CMAKE_INSTALL_LIBDIR=lib \
--D CMAKE_INSTALL_DOCDIR=doc \
--D CMAKE_INSTALL_BINDIR=bin \
-..
+# copy dependent libs into the install
+INSTALL_LIB_DIR=$INSTALL_DIR/lib
 
-# create tar.gz files
-make -j `nproc` package
+cp -P $DEP_DIR/lib/*ospcommon.so* $INSTALL_LIB_DIR
+cp -P $DEP_DIR/lib/*openvkl*.so* $INSTALL_LIB_DIR
+cp -P $DEP_BUILD_DIR/embree/src/lib/*embree*.so* $INSTALL_LIB_DIR
+cp -P $DEP_BUILD_DIR/oidn/src/lib/*OpenImage*.so* $INSTALL_LIB_DIR
+cp -P $DEP_BUILD_DIR/tbb/src/tbb/lib/intel64/gcc4.8/libtbb.so.* $INSTALL_LIB_DIR
+cp -P $DEP_BUILD_DIR/tbb/src/tbb/lib/intel64/gcc4.8/libtbbmalloc.so.* $INSTALL_LIB_DIR
 
+# tar up the results
+cd $INSTALL_DIR/..
+tar -caf $OSPRAY_PKG_BASE.tar.gz $OSPRAY_PKG_BASE
+mv *.tar.gz $ROOT_DIR

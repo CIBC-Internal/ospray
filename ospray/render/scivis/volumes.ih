@@ -1,0 +1,14 @@
+// Copyright 2009-2019 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+
+#pragma once
+
+#include "SciVis.ih"
+#include "volume/VolumetricModel.ih"
+
+struct LDSampler;
+
+vec4f integrateVolumeIntervals(const VolumeIntervals &intervals,
+    Ray &ray,
+    varying LDSampler *uniform ldSampler,
+    const uniform float samplingRate);

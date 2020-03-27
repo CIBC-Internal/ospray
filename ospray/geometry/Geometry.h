@@ -1,95 +1,120 @@
-// ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
+// Copyright 2009-2020 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
-#include "common/Managed.h"
-#include "common/OSPCommon.h"
-#include "common/Data.h"
-#include "common/Material.h"
 #include "api/ISPCDevice.h"
-//embree
+#include "common/Data.h"
+#include "common/Managed.h"
+#include "common/Material.h"
+#include "common/OSPCommon.h"
+// embree
 #include "embree3/rtcore.h"
 
 namespace ospray {
 
-  struct Model;
+struct OSPRAY_SDK_INTERFACE Geometry : public ManagedObject
+{
+  Geometry();
+  virtual ~Geometry() override;
 
-  /*! \brief abstract base class for geometries.
+  virtual std::string toString() const override;
 
-    Geometries are container objects that store primitives (like
-    triangles); multiple geometries together can form a model, which
-    is generally a set of geometries that logically go together (and
-    that usually share the same acceleration structures). I.e., in the
-    context of polygonal geometry a polygonal model might be specified
-    as a set of individual triangle meshes that each have a different
-    material (and their own connectivity and vertex sharing info), but
-    that together form a single model with a single accel structure */
-  struct OSPRAY_SDK_INTERFACE Geometry : public ManagedObject
-  {
-    Geometry();
-    virtual ~Geometry() override = default;
+  virtual size_t numPrimitives() const = 0;
 
-    //! set given geometry's materials.
-    /*! all material assignations should go through these functions;
-        This allows the respective geometry's derived instance to
-        always properly set the material field of the ISCP-equivalent
-        whenever the C++-side's material gets changed */
-    virtual void setMaterial(Material *mat);
-    virtual void setMaterialList(Data *matListData);
+  void postCreationInfo(size_t numVerts = 0) const;
 
-    //! get material assigned to this geometry
-    virtual Material *getMaterial() const;
+  // Object factory //
 
-    //! \brief common function to help printf-debugging
-    virtual std::string toString() const override;
+  static Geometry *createInstance(const char *type);
 
-    /*! \brief integrates this geometry's primitives into the respective
-        model's acceleration structure */
-    virtual void finalize(Model *);
+  RTCGeometry embreeGeometry{nullptr};
+};
 
-    /*! \brief creates an abstract geometry class of given type
+OSPTYPEFOR_SPECIALIZATION(Geometry *, OSP_GEOMETRY);
 
-      The respective geometry type must be a registered geometry type
-      in either ospray proper or any already loaded module. For
-      geometry types specified in special modules, make sure to call
-      ospLoadModule first. */
-    static Geometry *createInstance(const char *type);
+// convenience wrappers to set Embree buffer ////////////////////////////////
 
-    box3f bounds {empty};
+template <typename T>
+struct RTCFormatFor
+{
+  static constexpr RTCFormat value = RTC_FORMAT_UNDEFINED;
+};
 
-    //! materials associated to this geometry
-    /*! these fields should be set only through
-        'setMaterial' and 'setMaterialList' (see comments there) */
-    Material **materialList {nullptr};   //!< per-primitive material list
-    Ref<Data> materialListData;          //!< data array for per-prim materials
-    std::vector<void*> ispcMaterialPtrs; //!< pointers to ISPC equivalent materials
+#define RTCFORMATFOR_SPECIALIZATION(type, rtc_format)                          \
+  template <>                                                                  \
+  struct RTCFormatFor<type>                                                    \
+  {                                                                            \
+    static constexpr RTCFormat value = rtc_format;                             \
   };
 
-  /*! \brief registers a internal ospray::<ClassName> geometry under
-      the externally accessible name "external_name"
+RTCFORMATFOR_SPECIALIZATION(char, RTC_FORMAT_CHAR);
+RTCFORMATFOR_SPECIALIZATION(unsigned char, RTC_FORMAT_UCHAR);
+RTCFORMATFOR_SPECIALIZATION(short, RTC_FORMAT_SHORT);
+RTCFORMATFOR_SPECIALIZATION(unsigned short, RTC_FORMAT_USHORT);
+RTCFORMATFOR_SPECIALIZATION(int32_t, RTC_FORMAT_INT);
+RTCFORMATFOR_SPECIALIZATION(vec2i, RTC_FORMAT_INT2);
+RTCFORMATFOR_SPECIALIZATION(vec3i, RTC_FORMAT_INT3);
+RTCFORMATFOR_SPECIALIZATION(vec4i, RTC_FORMAT_INT4);
+RTCFORMATFOR_SPECIALIZATION(uint32_t, RTC_FORMAT_UINT);
+RTCFORMATFOR_SPECIALIZATION(vec2ui, RTC_FORMAT_UINT2);
+RTCFORMATFOR_SPECIALIZATION(vec3ui, RTC_FORMAT_UINT3);
+RTCFORMATFOR_SPECIALIZATION(vec4ui, RTC_FORMAT_UINT4);
+RTCFORMATFOR_SPECIALIZATION(int64_t, RTC_FORMAT_LLONG);
+RTCFORMATFOR_SPECIALIZATION(vec2l, RTC_FORMAT_LLONG2);
+RTCFORMATFOR_SPECIALIZATION(vec3l, RTC_FORMAT_LLONG3);
+RTCFORMATFOR_SPECIALIZATION(vec4l, RTC_FORMAT_LLONG4);
+RTCFORMATFOR_SPECIALIZATION(uint64_t, RTC_FORMAT_ULLONG);
+RTCFORMATFOR_SPECIALIZATION(vec2ul, RTC_FORMAT_ULLONG2);
+RTCFORMATFOR_SPECIALIZATION(vec3ul, RTC_FORMAT_ULLONG3);
+RTCFORMATFOR_SPECIALIZATION(vec4ul, RTC_FORMAT_ULLONG4);
+RTCFORMATFOR_SPECIALIZATION(float, RTC_FORMAT_FLOAT);
+RTCFORMATFOR_SPECIALIZATION(vec2f, RTC_FORMAT_FLOAT2);
+RTCFORMATFOR_SPECIALIZATION(vec3f, RTC_FORMAT_FLOAT3);
+RTCFORMATFOR_SPECIALIZATION(vec4f, RTC_FORMAT_FLOAT4);
+RTCFORMATFOR_SPECIALIZATION(linear2f, RTC_FORMAT_FLOAT2X2_COLUMN_MAJOR);
+RTCFORMATFOR_SPECIALIZATION(linear3f, RTC_FORMAT_FLOAT3X3_COLUMN_MAJOR);
+RTCFORMATFOR_SPECIALIZATION(affine2f, RTC_FORMAT_FLOAT2X3_COLUMN_MAJOR);
+RTCFORMATFOR_SPECIALIZATION(affine3f, RTC_FORMAT_FLOAT3X4_COLUMN_MAJOR);
+#undef RTCFORMATFOR_SPECIALIZATION
 
-      \internal This currently works by defining a extern "C" function
-      with a given predefined name that creates a new instance of this
-      geometry. By having this symbol in the shared lib ospray can
-      lateron always get a handle to this fct and create an instance
-      of this geometry.
-  */
-#define OSP_REGISTER_GEOMETRY(InternalClass, external_name) \
-  OSP_REGISTER_OBJECT(::ospray::Geometry, geometry, \
-                      InternalClass, external_name)
+// ... via ospData, NoOp when data is invalid
+template <typename T>
+void setEmbreeGeometryBuffer(RTCGeometry geom,
+    enum RTCBufferType type,
+    Ref<const DataT<T, 1>> &dataRef,
+    unsigned int slot = 0)
+{
+  if (!dataRef)
+    return;
+  rtcSetSharedGeometryBuffer(geom,
+      type,
+      slot,
+      RTCFormatFor<T>::value,
+      dataRef->data(),
+      0,
+      dataRef->stride(),
+      dataRef->size());
+}
+// ... via an std::vector
+template <typename T>
+void setEmbreeGeometryBuffer(RTCGeometry geom,
+    enum RTCBufferType type,
+    std::vector<T> &data,
+    unsigned int slot = 0)
+{
+  rtcSetSharedGeometryBuffer(geom,
+      type,
+      slot,
+      RTCFormatFor<T>::value,
+      data.data(),
+      0,
+      sizeof(T),
+      data.size());
+}
 
-} // ::ospray
+#define OSP_REGISTER_GEOMETRY(InternalClass, external_name)                    \
+  OSP_REGISTER_OBJECT(                                                         \
+      ::ospray::Geometry, geometry, InternalClass, external_name)
+
+} // namespace ospray

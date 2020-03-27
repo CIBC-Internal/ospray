@@ -1,78 +1,38 @@
-## ======================================================================== ##
-## Copyright 2009-2018 Intel Corporation                                    ##
-##                                                                          ##
-## Licensed under the Apache License, Version 2.0 (the "License");          ##
-## you may not use this file except in compliance with the License.         ##
-## You may obtain a copy of the License at                                  ##
-##                                                                          ##
-##     http://www.apache.org/licenses/LICENSE-2.0                           ##
-##                                                                          ##
-## Unless required by applicable law or agreed to in writing, software      ##
-## distributed under the License is distributed on an "AS IS" BASIS,        ##
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. ##
-## See the License for the specific language governing permissions and      ##
-## limitations under the License.                                           ##
-## ======================================================================== ##
+## Copyright 2009-2019 Intel Corporation
+## SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.1)
+
+##############################################################
+# Language setup
+##############################################################
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-PROJECT(OSPRay)
+set(CMAKE_C_STANDARD   99)
+set(CMAKE_CXX_STANDARD 11)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-CMAKE_POLICY(SET CMP0003 NEW) # since 2.6
-IF(POLICY CMP0015)
-  CMAKE_POLICY(SET CMP0015 NEW) # since 2.8.1
-ENDIF()
-IF(POLICY CMP0020)
-  CMAKE_POLICY(SET CMP0020 NEW) # since 2.8.11
-ENDIF()
-IF(POLICY CMP0042)
-  CMAKE_POLICY(SET CMP0042 NEW) # since 3.0
-ENDIF()
-IF(POLICY CMP0054)
-  CMAKE_POLICY(SET CMP0054 OLD) # since 3.1
-ENDIF()
+set(CMAKE_C_STANDARD_REQUIRED   ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# configure directories for components we are going to include
-SET(OSPRAY_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-SET(COMPONENTS_DIR ${OSPRAY_DIR}/components)
-SET(OSPCOMMON_DIR ${COMPONENTS_DIR}/ospcommon)
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${OSPCOMMON_DIR}/cmake)
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+##############################################################
+# Establish project
+##############################################################
+
+include(cmake/ospray_version.cmake)
+
+project(OSPRay VERSION ${OSPRAY_VERSION} LANGUAGES C CXX)
 
 ##############################################################
 # CMake modules and macro files
 ##############################################################
-
-INCLUDE(macros)
-INCLUDE(ospray_macros)
-INCLUDE(ospray_options)
-INCLUDE(ispc)
-
-##############################################################
-# the OSPRay 'common' library
-##############################################################
-ADD_SUBDIRECTORY(${OSPCOMMON_DIR})
-
-##############################################################
-# OSPRay components
-#
-# 'components' work similar to 'packages' in linux distributions: each
-# component is its own little piece that builds some applications,
-# libraries, etc, and may have dependencies to other components.
-##############################################################
-INCLUDE(components/configure.cmake)
-
-##############################################################
-# the OSPRay library
-##############################################################
-
-ADD_SUBDIRECTORY(ospray)
-
-##############################################################
-# OSPRay sample apps; at the end: they may need modules
-##############################################################
+#<<<<<<< HEAD
 #IF (OSPRAY_ENABLE_APPS)
   #ADD_SUBDIRECTORY(apps)
 #ENDIF()
@@ -86,17 +46,27 @@ ADD_SUBDIRECTORY(ospray)
 # AT THE BACK, only AFTER ALL OTHER PARTS OF OSPRAY ARE BUILT
 ##############################################################
 #ADD_SUBDIRECTORY(modules)
+#=======
+
+list(APPEND CMAKE_MODULE_PATH
+  ${PROJECT_SOURCE_DIR}/cmake
+  ${PROJECT_SOURCE_DIR}/cmake/compiler
+)
+#>>>>>>> master
+
+include(ospray_macros)
+include(ospray_options)
+include(package)
+include(ispc)
+
+if (OSPRAY_INSTALL_DEPENDENCIES)
+  include(ospray_redistribute_deps)
+endif()
 
 ##############################################################
-# Google Test
+# Add library and executable targets
 ##############################################################
-IF (OSPRAY_ENABLE_TESTING)
-  ADD_SUBDIRECTORY(tests)
-ENDIF()
-
-##############################################################
-# add target for running clang-format
-##############################################################
+#<<<<<<< HEAD
 OPTION(OSPRAY_ENABLE_TARGET_CLANGFORMAT
        "Enable 'format' target, requires clang-format too" OFF)
 INCLUDE(clang-format)
@@ -123,3 +93,31 @@ export(TARGETS ${SCI_OSPRAY_LIBRARY} FILE OsprayExports.cmake)
 
 # has to be last
 INCLUDE(CPack)
+#=======
+
+## Main OSPRay library ##
+add_subdirectory(ospray)
+
+## OSPRay sample apps ##
+if (OSPRAY_ENABLE_APPS)
+  add_subdirectory(apps)
+endif()
+
+## Modules ##
+if (OSPRAY_ENABLE_MODULES)
+  add_subdirectory(modules)
+endif()
+
+## Testing ##
+if (OSPRAY_APPS_TESTING)
+  add_subdirectory(test_image_data)
+endif()
+
+## Clang-format target ##
+if (OSPRAY_ENABLE_TARGET_CLANGFORMAT)
+  include(clang-format)
+endif()
+
+# Must be last
+include(CPack)
+#>>>>>>> master

@@ -1,18 +1,213 @@
 Version History
 ---------------
 
+### Changes in v2.0.1:
+
+-   Fix bug where Embree user-defined geometries were not indexed correctly
+    in the scene, which now requires Embree v3.8.0+
+-   Fix crash when the path tracer encounters geometric models that do not
+    have a material
+-   Fix crash when some path tracer materials generated NULL bsdfs
+-   Fix bug where `ospGetBounds` returned incorrect values
+-   Fix missing symbol in denoiser module
+-   Fix missing symbol exports on Windows for all OSPRay built modules
+-   Add the option to specify a single color for geometric models
+-   The `scivis` renderer now respects the opacity component of `color` on
+    geometric models
+-   Fix various inconsistent handling of frame buffer alpha between renderers
+-   `ospGetCurrentDevice` now increments the ref count of the returned
+    `OSPDevice` handle, so applications will need to release the handle when
+    finished by using `ospDeviceRelease` accordingly
+-   Added denoiser to `ospExamples` app
+-   Added `module_mpi` to superbuild (disabled by default)
+-   The superbuild now will emit a CMake error when using any 32-bit CMake
+    generator, as 32-bit builds are not supported
+
+### Changes in v2.0.0:
+
+-   New major revision of OSPRay brings API breaking improvements over
+    v1.x. See [doc/ospray2_porting_guide.md] for a deeper description of
+    migrating from v1.x to v2.0 and the latest
+    [API documentation](README.md#ospray-api)
+    -   `ospRenderFrame` now takes all participating objects as
+        function parameters instead of setting some as renderer params
+    -   `ospRenderFrame` is now asynchronous, where the task is managed
+        through a returned `OSPFuture` handle
+    -   The heirarchy of objets in a scene are now more granular to
+        aid in scene construction flexibility and reduce potential
+        object duplication
+    -   Type-specific parameter setting functions have been consolidated
+        into a single `ospSetParam` API call
+    -   C++ wrappers found in `ospray_cpp.h` now automatically track
+        handle lifetimes, therefore applications using them do not need
+        to use `ospRelease` (or the new `ospRetain`) with them: see
+        usage example in `apps/tutorials/ospTutorial.cpp`
+    -   Unused parameters are reported as status messages when
+        `logLevel` is at least `warning` (most easily set by enabling
+        OSPRay debug on initialization)
+-   New utility library which adds functions to help with new API
+    migration and reduction of boilerplate code
+    -   Use `ospray_util.h` to access these additional functions
+    -   All utility functions are implemented in terms of the core API
+        found in `ospray.h`, therefore they are compatible with any
+        device backend
+-   Introduction of new Intel® Open Volume Kernel Library (Open VKL)
+    for greatly enhanced volume sampling and rendering features and
+    performance
+-   Added direct support for Intel® Open Image Denoise as an optional
+    module, which adds a `denoiser` type to `ospNewImageOperation`
+-   OSPRay now requires minimum Embree v3.7.0
+-   New CMake superbuild available to build both OSPRay's dependencies
+    and OSPRay itself
+    -   Found in `scripts/superbuild`
+    -   See documentation for more details and example usage
+-   The `ospcommon` library now lives as a stand alone repository and
+    is required to build OSPRay
+-   The MPI module is now a separate repository, which also contains all
+    MPI distributed rendering documentation
+-   Log levels are now controled with enums and named strings (where applicable)
+    -   A new flag was also introduced which turns all OSP_LOG_WARNING messages
+        into errors, which are submitted to the error callback instead of the
+        message callback
+    -   Any unused parameters an object ignores now emit a warning message
+-   New support for volumes in the `pathtracer`
+    -   Several parameters are available for performance/quality
+        trade-offs for both photo-realistic and scientific visualization
+        use cases
+-   Simplification of the SciVis renderer
+    -   Fixed AO lighting and simple ray marched volume rendering for
+        ease of use and performance
+-   Overlapping volumes are now supported in both the `pathtracer` and `scivis`
+    renderers
+-   New API call for querying the bounds of objects (`OSPWorld`,
+    `OSPInstance`, and `OSPGroup`)
+-   Lights now exist as a parameter to the world instead of the renderer
+-   Removal of `slices` geometry. Instead, any geometry with volume
+    texture can be used for slicing
+-   Introduction of new `boxes` geometry type
+-   Expansion of information returned by `ospPick`
+-   Addition of API to query version information at runtime
+-   Curves now supports both, per vertex varying radii as in `vec4f[]
+    vertex.position_radius` and constant radius for the geometry with
+    `float radius`. It uses `OSP_ROUND` type and `OSP_LINEAR` basis by
+    default to create the connected segments of constant radius. For per
+    vertex varying radii curves it uses Embree curves.
+-   Add new Embree curve type `OSP_CATMULL_ROM` for curves
+-   Minimum required Embree version is now 3.7.0
+-   Removal of `cylinders` and `streamlines` geometry, use `curves`
+    instead
+-   Triangle mesh and Quad mesh are superseded by the `mesh` geometry
+-   Applications need to use the various error reporting methods to
+    check wether the creation (via `ospNew...`) of objects failed; a
+    returned `NULL` is not a special handle anymore to signify an error
+-   Changed module init methods to facilitate version checking:
+    `extern "C" OSPError ospray_module_init_<name>(int16_t versionMajor, int16_t versionMinor, int16_t versionPatch)`
+-   The `map_backplate` texture is supported in all renderers and does
+    not hide lights in infinity (like the HDRI light) anymore;
+    explicitely make lights in`visible` if this is needed
+-   Changed the computation of variance for adaptive accumulation to be
+    independent of `TILE_SIZE`, thus `varianceThreshold` needs to be
+    adapted if using a different TILE_SIZE than default 64
+-   `OSPGeometricModel` now has the option to index a renderer-global material
+    list that lives on the renderer, allowing scenes to avoid renderer-specific
+    materials
+-   Object type names and parameters all now follow the camel-case convention
+-   New `ospExamples` app which consolidates previous interactive apps into one
+-   New `ospBenchmark` app which implements a runnable benchmark suite
+-   Known issues:
+    -   ISPC v1.11.0 and Embree v3.6.0 are both incompatible with OSPRay
+        and should be avoided (OSPRay should catch this during CMake
+        configure)
+
+### Changes in v1.8.5:
+
+-   Fix float precision cornercase (`NaN`s) in sphere light sampling
+-   Fix CMake bug that assumed `.git` was a directory, which is not true
+    when using OSPRay as a git submodule
+-   Fix CMake warning
+-   Fix `DLL_EXPORT` issue with `ospray_testing` helper library on
+    Windows
+
+### Changes in v1.8.4:
+
+-   Add location of `libospray` to paths searched to find modules
+
+### Changes in v1.8.3:
+
+-   Fix bug where parameters set by `ospSet1b()` were being ignored
+-   Fix bug in box intersection tests possibly creating `NaN`s
+-   Fix issue with client applications calling `find_package(ospray)`
+    more than once
+-   Fix bug in cylinder intersection when ray and cylinder are
+    perpendicular
+-   Fix rare crash in path tracer / MultiBSDF
+
+### Changes in v1.8.2:
+
+-   CMake bug fix where external users of OSPRay needed CMake newer than
+    version 3.1
+-   Fix incorrect propagation of tasking system flags from an OSPRay
+    install
+-   Fix inconsistency between supported environment variables and
+    command line parameters passed to `ospInit()`
+    -   Missing variables were `OSPRAY_LOAD_MODULES` and
+        `OSPRAY_DEFAULT_DEVICE`
+
+### Changes in v1.8.1:
+
+-   CMake bug fix to remove full paths to dependencies in packages
+
+### Changes in v1.8.0:
+
+-   This will be the last minor revision of OSPRay. Future development
+    effort in the `devel` branch will be dedicated to v2.0 API changes
+    and may break existing v1.x applications.
+    -   This will also be the last version of OSPRay to include
+        `ospray_sg` and the Example Viewer. Users which depend on these
+        should instead use the separate OSPRay Studio project, where
+        `ospray_sg` will be migrated.
+    -   We will continue to support patch releases of v1.8.x in case of
+        any reported bugs
+-   Refactored CMake to use newer CMake concepts
+    -   All targets are now exported in OSPRay installs and can be
+        consumed by client projects with associated includes, libraries,
+        and definitions
+    -   OSPRay now requires CMake v3.1 to build
+    -   See documentation for more details
+-   Added new minimal tutorial apps to replace the more complex Example
+    Viewer
+-   Added new "`subdivision`" geometry type to support subdivision
+    surfaces
+-   Added support for texture formats `L8`, `LA8` (gamma-encoded
+    luminance), and `RA8` (linear two component). Note that the enum
+    `OSP_TEXTURE_FORMAT_INVALID` changed its value, thus recompilation
+    may be necessary.
+-   Automatic epsilon handling, which removes the "`epsilon`" parameter
+    on all renderers
+-   Normals in framebuffer channel `OSP_FB_NORMAL` are now in
+    world-space
+-   Added support for Intel® Open Image Denoise to the Example Viewer
+    -   This same integration will soon be ported to OSPRay Studio
+-   Fixed artifacts for scaled instances of spheres, cylinders and
+    streamlines
+-   Improvements to precision of intersections with cylinders and
+    streamlines
+-   Fixed Quadlight: the emitting side is now indeed in direction
+    `edge1`×`edge2`
+
 ### Changes in v1.7.3:
 
 -   Make sure a "`default`" device can always be created
--   Fix `ospNewTexture2D` (completely implementing old behaviour)
--   Cleanup any shared object handles from the OS created from `ospLoadModule()`
+-   Fixed `ospNewTexture2D` (completely implementing old behavior)
+-   Cleanup any shared object handles from the OS created from
+    `ospLoadModule()`
 
 ### Changes in v1.7.2:
 
--   Fix issue in `mpi_offload` device where `ospRelease` would sometimes not
-    correctly free objects
--   Fix issue in `ospray_sg` where structured volumes would not properly
-    release the underlying OSPRay object handles
+-   Fixed issue in `mpi_offload` device where `ospRelease` would
+    sometimes not correctly free objects
+-   Fixed issue in `ospray_sg` where structured volumes would not
+    properly release the underlying OSPRay object handles
 
 ### Changes in v1.7.1:
 
@@ -26,21 +221,23 @@ Version History
     textures, thus `OSPTexture2D` and `ospNewTexture2D` are now
     deprecated, use the new API call `ospNewTexture("texture2d")`
     instead
-    -   Added new `volume` texture type to visualize volume data on arbitrary
-        geometry placed inside the volume
+    -   Added new `volume` texture type to visualize volume data on
+        arbitrary geometry placed inside the volume
 -   Added new framebuffer channels `OSP_FB_NORMAL` and `OSP_FB_ALBEDO`
 -   Applications can get information about the progress of rendering the
     current frame, and optionally cancel it, by registering a callback
     function via `ospSetProgressFunc()`
--   Lights are not tied to the renderer type, so a new function `ospNewLight3()`
-    was introduced to implement this. Please convert all uses of `ospNewLight()`
-    and/or `ospNewLight2()` to `ospNewLight3()`
+-   Lights are not tied to the renderer type, so a new function
+    `ospNewLight3()` was introduced to implement this. Please convert
+    all uses of `ospNewLight()` and/or `ospNewLight2()` to
+    `ospNewLight3()`
 -   Added sheenTint parameter to Principled material
 -   Added baseNormal parameter to Principled material
 -   Added low-discrepancy sampling to path tracer
--   The `spp` parameter on the renderer no longer supports values less than 1,
-    instead applications should render to a separate, lower resolution
-    frame buffer during interaction to achieve the same behavior
+-   The `spp` parameter on the renderer no longer supports values less
+    than 1, instead applications should render to a separate, lower
+    resolution framebuffer during interaction to achieve the same
+    behavior
 
 ### Changes in v1.6.1:
 
@@ -78,7 +275,7 @@ Version History
 -   Added ability to configure Embree scene flags via `OSPModel`
     parameters
 -   `ospFreeFrameBuffer()` has been deprecated in favor of using
-    `ospRelease()` to free frame buffer handles
+    `ospRelease()` to free framebuffer handles
 -   Fixed memory leak caused by incorrect parameter reference counts in
     ispc device
 -   Fixed occasional crashes in the `mpi_offload` device on shutdown
@@ -99,7 +296,7 @@ Version History
 -   `ospray_sg` headers are now installed alongside the SDK
 -   Core OSPRay ispc device now implemented as a module
     -   Devices which implement the public API are no longer required to
-        link the dependencies to core OSPRay (e.g. Embree v2.x)
+        link the dependencies to core OSPRay (e.g., Embree v2.x)
     -   By default, `ospInit()` will load the ispc module if a device
         was not created via `--osp:mpi` or `--osp:device:[name]`
 -   MPI devices can now accept an existing world communicator instead of
@@ -112,7 +309,7 @@ Version History
         be extended with new scene data importers via modules or the SDK
     -   Updated `ospTutorial` examples to properly call `ospRelease()`
     -   New options in the `ospExampleViewer` GUI to showcase new
-        features (sRGB frame buffers, tone mapping, etc.)
+        features (sRGB framebuffers, tone mapping, etc.)
 -   General bug fixes
     -   Fixes to geometries with multiple emissive materials
     -   Improvements to precision of ray-sphere intersections
@@ -134,7 +331,7 @@ Version History
         renderer
     -   Fixed an issue with camera lens samples not initialized when
         `spp` <= 0
-    -   Fixed an issue in ospExampleViewer when specifying multiple data
+    -   Fixed an issue in `ospExampleViewer` when specifying multiple data
         files
 -   The C99 tutorial is now indicated as the default; the C++ wrappers
     do not change the semantics of the API (memory management) so the
@@ -153,7 +350,7 @@ Version History
     -   No more image jittering with MPI rendering when no accumulation
         buffer is used
 -   Improved path tracer materials
-    -   Also support RGB `eta`/`k` for Metal
+    -   Additionally support RGB `eta`/`k` for Metal
     -   Added Alloy material, a "metal" with textured color
 -   Minimum required Embree version is now v2.15
 
@@ -178,8 +375,8 @@ Version History
     and `mpi_maml` infrastructure libraries
 -   Major sample app cleanups
     -   `ospray_sg` library is the new basis for building apps, which is
-        a scenegraph implementation
-    -   Old (unused) libraries have been removed: miniSG, commandline,
+        a scene graph implementation
+    -   Old (unused) libraries have been removed: miniSG, command line,
         importer, loaders, and scripting
     -   Some removed functionality (such as scripting) may be
         reintroduced in the new infrastructure later, though most
@@ -215,12 +412,12 @@ Version History
 -   Support of Intel® AVX-512 for next generation Intel® Xeon® processor
     (codename Skylake), thus new minimum ISPC version is 1.9.1
 -   Thread affinity of OSPRay's tasking system can now be controlled via
-    either device parameter `setAffinity`, or commandline parameter
+    either device parameter `setAffinity`, or command line parameter
     `osp:setaffinity`, or environment variable `OSPRAY_SET_AFFINITY`
 -   Changed behavior of the background color in the SciVis renderer:
     `bgColor` now includes alpha and is always blended (no
-    `backgroundEnabled` anymore). To disable the background don't set
-    bgColor, or set it to transparent black (0, 0, 0, 0)
+    `backgroundEnabled` anymore). To disable the background do not set
+    `bgColor`, or set it to transparent black (0, 0, 0, 0)
 -   Geometries "`spheres`" and "`cylinders`" now support texture
     coordinates
 -   The GLUT- and Qt-based demo viewer applications have been replaced
@@ -301,7 +498,7 @@ Version History
     -   Single sided lighting (enabled by default)
     -   Many new volume rendering specific features
         -   Adaptive sampling to help improve the correctness of
-            rendering high frequency volume data
+            rendering high-frequency volume data
         -   Pre-integration of transfer function for higher fidelity
             images
         -   Ambient occlusion
@@ -477,13 +674,13 @@ changes.
 -   OSPRay now uses C++11 features, requiring up to date compiler and
     standard library versions (GCC v4.8.0)
 -   Optimization of volume sampling resulting in volume rendering
-    speedups of up to 1.5x
+    speedups of up to 1.5×
 -   Updates to path tracer
     -   Reworked material system
     -   Added texture transformations and colored transparency in OBJ
         material
     -   Support for alpha and depth components of framebuffer
--   Added thinlens camera, i.e. support for depth of field
+-   Added thinlens camera, i.e., support for depth of field
 -   Tasking system has been updated to use Intel Threading Building
     Blocks (Intel TBB)
 -   The `ospGet*()` API calls have been deprecated and will be removed
@@ -562,12 +759,12 @@ changes.
         `gridSpacing` parameters
     -   New `shared_structured_volume` volume type that allows voxel
         data to be provided by applications through a shared data buffer
-    -   New API call to set subregions of volume data (`ospSetRegion()`)
+    -   New API call to set (sub-)regions of volume data (`ospSetRegion()`)
 -   Added a subsampling-mode, enabled with a negative `spp` parameter;
     the first frame after scene changes is rendered with reduced
     resolution, increasing interactivity
 -   Added multi-target ISA support: OSPRay will now select the
-    appropriate ISA at run time
+    appropriate ISA at runtime
 -   Added support for the Stanford SEP file format to the seismic
     module
 -   Added `--osp:numthreads <n>` command line option to restrict the

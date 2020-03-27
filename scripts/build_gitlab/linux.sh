@@ -1,19 +1,6 @@
 #!/bin/bash
-## ======================================================================== ##
-## Copyright 2015-2018 Intel Corporation                                    ##
-##                                                                          ##
-## Licensed under the Apache License, Version 2.0 (the "License");          ##
-## you may not use this file except in compliance with the License.         ##
-## You may obtain a copy of the License at                                  ##
-##                                                                          ##
-##     http://www.apache.org/licenses/LICENSE-2.0                           ##
-##                                                                          ##
-## Unless required by applicable law or agreed to in writing, software      ##
-## distributed under the License is distributed on an "AS IS" BASIS,        ##
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. ##
-## See the License for the specific language governing permissions and      ##
-## limitations under the License.                                           ##
-## ======================================================================== ##
+## Copyright 2015-2019 Intel Corporation
+## SPDX-License-Identifier: Apache-2.0
 
 mkdir build
 cd build
@@ -26,16 +13,29 @@ wget https://downloads.sourceforge.net/project/ispcmirror/v1.9.2/ispc-v1.9.2-lin
 
 export PATH="$TRAVIS_BUILD_DIR/build/ispc-v1.9.2-linux/:$PATH"
 
-cmake \
-  -D embree_DIR:PATH=build/embree-3.2.0.x86_64.linux \
-  -D OSPRAY_TASKING_SYSTEM=Internal \
-  -D OSPRAY_BUILD_ISA=ALL \
-  -D OSPRAY_ENABLE_TESTING=ON \
-  -D OSPRAY_AUTO_DOWNLOAD_TEST_IMAGES=OFF \
-  -D OSPRAY_MODULE_BILINEAR_PATCH=ON \
-  -D OSPRAY_SG_CHOMBO=OFF \
-  -D OSPRAY_SG_OPENIMAGEIO=OFF \
-  -D OSPRAY_SG_VTK=OFF \
-  "$@" ..
+# cmake \
+#   -D embree_DIR:PATH=build/embree-3.2.0.x86_64.linux \
+#   -D OSPRAY_TASKING_SYSTEM=Internal \
+#   -D OSPRAY_BUILD_ISA=ALL \
+#   -D OSPRAY_ENABLE_TESTING=ON \
+#   -D OSPRAY_AUTO_DOWNLOAD_TEST_IMAGES=OFF \
+#   -D OSPRAY_MODULE_BILINEAR_PATCH=ON \
+#   -D OSPRAY_SG_CHOMBO=OFF \
+#   -D OSPRAY_SG_OPENIMAGEIO=OFF \
+#   -D OSPRAY_SG_VTK=OFF \
+#   "$@" ..
 
-make -j`nproc` && make test
+# NOTE(jda) - Some Linux OSs need to have lib/ on LD_LIBRARY_PATH at build time
+export LD_LIBRARY_PATH=`pwd`/install/lib:${LD_LIBRARY_PATH}
+
+cmake --version
+
+cmake -L \
+  -D CMAKE_INSTALL_LIBDIR=lib \
+  -D BUILD_OSPRAY_CI_TESTS=ON \
+  -D BUILD_EMBREE_FROM_SOURCE=OFF \
+  -D INSTALL_IN_SEPARATE_DIRECTORIES=OFF \
+  "$@" \
+ ../scripts/superbuild
+
+cmake --build .

@@ -1,56 +1,43 @@
-// ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
+// Copyright 2009-2019 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
-#include <ospray/ospray_cpp/ManagedObject.h>
+#include "ManagedObject.h"
 
 namespace ospray {
-  namespace cpp    {
+namespace cpp {
 
-    class Light : public ManagedObject_T<OSPLight>
-    {
-    public:
+class Light : public ManagedObject<OSPLight, OSP_LIGHT>
+{
+ public:
+  Light(const std::string &light_type);
+  Light(const Light &copy);
+  Light(OSPLight existing = nullptr);
+};
 
-      Light(const std::string &light_type);
-      Light(const Light &copy);
-      Light(OSPLight existing);
-    };
+static_assert(
+    sizeof(Light) == sizeof(OSPLight), "cpp::Light can't have data members!");
 
-    // Inlined function definitions ///////////////////////////////////////////
+// Inlined function definitions ///////////////////////////////////////////
 
-    inline Light::Light(const std::string &light_type)
-    {
-      auto c = ospNewLight3(light_type.c_str());
-      if (c) {
-        ospObject = c;
-      } else {
-        throw std::runtime_error("Failed to create OSPLight (of type '"+light_type+"')!");
-      }
-    }
+inline Light::Light(const std::string &light_type)
+{
+  ospObject = ospNewLight(light_type.c_str());
+}
 
-    inline Light::Light(const Light &copy) :
-      ManagedObject_T<OSPLight>(copy.handle())
-    {
-    }
+inline Light::Light(const Light &copy)
+    : ManagedObject<OSPLight, OSP_LIGHT>(copy.handle())
+{
+  ospRetain(copy.handle());
+}
 
-    inline Light::Light(OSPLight existing) :
-      ManagedObject_T<OSPLight>(existing)
-    {
-    }
+inline Light::Light(OSPLight existing)
+    : ManagedObject<OSPLight, OSP_LIGHT>(existing)
+{}
 
-  }// namespace cpp
-}// namespace ospray
+} // namespace cpp
+
+OSPTYPEFOR_SPECIALIZATION(cpp::Light, OSP_LIGHT);
+
+} // namespace ospray

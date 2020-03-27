@@ -1,147 +1,144 @@
-// ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
+// Copyright 2009-2019 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
 
 // ospray
-#include "common/Util.h"
 #include "volume/Volume.h"
-#include "transferFunction/TransferFunction.h"
-#include "common/Data.h"
 #include "Volume_ispc.h"
+#include "common/Data.h"
+#include "common/Util.h"
+#include "transferFunction/TransferFunction.h"
+
+#include "openvkl/openvkl.h"
+
+#include <unordered_map>
 
 namespace ospray {
 
-  bool Volume::isDataDistributed() const
-  {
-    return false;
-  }
+// Volume defintions ////////////////////////////////////////////////////////
 
-  std::string Volume::toString() const
-  {
-    return "ospray::Volume";
-  }
+Volume::Volume(const std::string &type) : vklType(type)
+{
+  ispcEquivalent = ispc::Volume_createInstance_vklVolume(this);
+  managedObjectType = OSP_VOLUME;
+  // XXX temporary until VKL 0.9 is released
+  if (vklType == "structuredRegular")
+    vklType = "structured_regular";
+  if (vklType == "structuredSpherical")
+    vklType = "structured_spherical";
+}
 
-  Volume *Volume::createInstance(const std::string &type)
-  {
-    return createInstanceHelper<Volume, OSP_VOLUME>(type);
-  }
+Volume::~Volume()
+{
+  if (embreeGeometry)
+    rtcReleaseGeometry(embreeGeometry);
+}
 
-  void Volume::commit()
-  {
-  }
+std::string Volume::toString() const
+{
+  return "ospray::Volume";
+}
 
-  void Volume::computeSamples(float **results,
-                              const vec3f *worldCoordinates,
-                              const size_t &count)
-  {
-    // The ISPC volume container must exist at this point.
-    assert(ispcEquivalent != nullptr);
+void Volume::commit()
+{
+  if (vklVolume)
+    vklRelease(vklVolume);
 
-    // Allocate memory for returned volume samples
-    *results = (float *)malloc(count * sizeof(float));
+  vklVolume = vklNewVolume(vklType.c_str());
 
-    std::vector<float> ispcResults(count);
-    float *ptr = ispcResults.data();
+  if (!vklVolume)
+    throw std::runtime_error("unsupported volume type '" + vklType + "'");
 
-    // Compute the sample values.
-    ispc::Volume_computeSamples(ispcEquivalent,
-                                &ptr,
-                                (const ispc::vec3f *)worldCoordinates,
-                                count);
+  handleParams();
 
-    // Copy samples and free ISPC results memory
-    memcpy(*results, ptr, count * sizeof(float));
-  }
+  vklCommit(vklVolume);
+  (vkl_box3f &)bounds = vklGetBoundingBox(vklVolume);
 
-  void Volume::finish()
-  {
-    // The ISPC volume container must exist at this point.
-    assert(ispcEquivalent != nullptr);
+  createEmbreeGeometry();
 
-    // Make the volume bounding box visible to the application.
-    ispc::box3f boundingBox;
-    ispc::Volume_getBoundingBox(&boundingBox,ispcEquivalent);
-    setParam("boundingBoxMin", boundingBox.lower);
-    setParam("boundingBoxMax", boundingBox.upper);
-  }
+  ispc::Volume_set(ispcEquivalent, embreeGeometry);
+  ispc::Volume_set_vklVolume(ispcEquivalent, vklVolume, (ispc::box3f *)&bounds);
+}
 
-  void Volume::updateEditableParameters()
-  {
-    // Set the gradient shading flag for the renderer.
-    ispc::Volume_setGradientShadingEnabled(ispcEquivalent,
-                                           getParam1i("gradientShadingEnabled",
-                                                      0));
+void Volume::createEmbreeGeometry()
+{
+  if (embreeGeometry)
+    rtcReleaseGeometry(embreeGeometry);
 
-    ispc::Volume_setPreIntegration(ispcEquivalent,
-                                       getParam1i("preIntegration",
-                                                  0));
+  embreeGeometry = rtcNewGeometry(ispc_embreeDevice(), RTC_GEOMETRY_TYPE_USER);
+}
 
-    ispc::Volume_setSingleShade(ispcEquivalent,
-                                   getParam1i("singleShade",
-                                              1));
+void Volume::handleParams()
+{
+  // pass all supported parameters through to VKL volume object
+  std::for_each(params_begin(), params_end(), [&](std::shared_ptr<Param> &p) {
+    auto &param = *p;
+    param.query = true;
 
-    ispc::Volume_setAdaptiveSampling(ispcEquivalent,
-                                   getParam1i("adaptiveSampling",
-                                              1));
+    if (param.data.is<bool>()) {
+      vklSetBool(vklVolume, param.name.c_str(), param.data.get<bool>());
+    } else if (param.data.is<float>()) {
+      vklSetFloat(vklVolume, param.name.c_str(), param.data.get<float>());
+    } else if (param.data.is<int>()) {
+      vklSetInt(vklVolume, param.name.c_str(), param.data.get<int>());
+    } else if (param.data.is<vec3f>()) {
+      vklSetVec3f(vklVolume,
+          param.name.c_str(),
+          param.data.get<vec3f>().x,
+          param.data.get<vec3f>().y,
+          param.data.get<vec3f>().z);
+    } else if (param.data.is<void *>()) {
+      vklSetVoidPtr(vklVolume, param.name.c_str(), param.data.get<void *>());
+    } else if (param.data.is<const char *>()) {
+      vklSetString(
+          vklVolume, param.name.c_str(), param.data.get<const char *>());
+    } else if (param.data.is<vec3i>()) {
+      vklSetVec3i(vklVolume,
+          param.name.c_str(),
+          param.data.get<vec3i>().x,
+          param.data.get<vec3i>().y,
+          param.data.get<vec3i>().z);
+    } else if (param.data.is<ManagedObject *>()) {
+      Data *data = (Data *)param.data.get<ManagedObject *>();
 
-    ispc::Volume_setAdaptiveScalar(ispcEquivalent,
-                                 getParam1f("adaptiveScalar", 15.0f));
+      if (data->type == OSP_DATA) {
+        const Ref<const DataT<Data *>> blockData =
+            getParamDataT<Data *>(param.name.c_str(), true);
+        std::vector<VKLData> vklBlockData;
+        for (auto &&data : *blockData) {
+          VKLData vklData = vklNewData(data->size(),
+              (VKLDataType)data->type,
+              data->data(),
+              VKL_DATA_SHARED_BUFFER);
+          vklBlockData.push_back(vklData);
+        }
+        VKLData vklData =
+            vklNewData(vklBlockData.size(), VKL_DATA, vklBlockData.data());
+        vklSetData(vklVolume, param.name.c_str(), vklData);
+        vklRelease(vklData);
+      } else {
+        VKLData vklData = vklNewData(data->size(),
+            (VKLDataType)data->type,
+            data->data(),
+            VKL_DATA_SHARED_BUFFER);
 
-    ispc::Volume_setAdaptiveMaxSamplingRate(ispcEquivalent,
-                                 getParam1f("adaptiveMaxSamplingRate", 2.0f));
+        std::string name(param.name);
+        if (name == "data") {
+          if (!data->compact())
+            throw std::runtime_error(toString()
+                + " 'data' array with strides currently not supported.");
+          vec3ul &dim = data->numItems;
+          vklSetVec3i(vklVolume, "dimensions", dim.x, dim.y, dim.z);
+          vklSetInt(vklVolume, "voxelType", (VKLDataType)data->type);
+        }
+        vklSetData(vklVolume, name.c_str(), vklData);
+        vklRelease(vklData);
+      }
+    } else {
+      param.query = false;
+    }
+  });
+}
 
-    ispc::Volume_setAdaptiveBacktrack(ispcEquivalent,
-                                 getParam1f("adaptiveBacktrack", 0.03f));
+OSPTYPEFOR_DEFINITION(Volume *);
 
-    // Set the recommended sampling rate for ray casting based renderers.
-    ispc::Volume_setSamplingRate(ispcEquivalent,
-                                 getParam1f("samplingRate", 0.125f));
-
-    vec3f specular = getParam3f("specular", getParam3f("ks", getParam3f("Ks", vec3f(0.3f))));
-    ispc::Volume_setSpecular(ispcEquivalent, (const ispc::vec3f &)specular);
-    float Ns = getParam1f("ns", getParam1f("Ns", 20.f));
-    ispc::Volume_setNs(ispcEquivalent, Ns);
-
-    // Set the transfer function.
-    auto *transferFunction =
-        (TransferFunction *)getParamObject("transferFunction", nullptr);
-
-    if (transferFunction == nullptr)
-      throw std::runtime_error("no transfer function specified on the volume!");
-
-    ispc::Volume_setTransferFunction(ispcEquivalent, transferFunction->getIE());
-
-    // Set the volume clipping box (empty by default for no clipping).
-    box3f volumeClippingBox = box3f(getParam3f("volumeClippingBoxLower",
-                                               vec3f(0.f)),
-                                    getParam3f("volumeClippingBoxUpper",
-                                               vec3f(0.f)));
-    ispc::Volume_setVolumeClippingBox(ispcEquivalent,
-                                      (const ispc::box3f &)volumeClippingBox);
-
-    // Set affine transformation
-    AffineSpace3f xfm;
-    xfm.l.vx = getParam3f("xfm.l.vx",vec3f(1.f,0.f,0.f));
-    xfm.l.vy = getParam3f("xfm.l.vy",vec3f(0.f,1.f,0.f));
-    xfm.l.vz = getParam3f("xfm.l.vz",vec3f(0.f,0.f,1.f));
-    xfm.p    = getParam3f("xfm.p",   vec3f(0.f,0.f,0.f));
-    AffineSpace3f rcp_xfm = rcp(xfm);
-    ispc::Volume_setAffineTransformations(ispcEquivalent,
-					  (ispc::AffineSpace3f&)xfm,
-					  (ispc::AffineSpace3f&)rcp_xfm);
-  }
-
-} // ::ospray
-
+} // namespace ospray

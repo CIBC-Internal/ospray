@@ -1,22 +1,11 @@
-// ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
+// Copyright 2009-2019 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
 
 // ospray
 #include "Renderer.h"
+#include "common/Instance.h"
 #include "common/Util.h"
+#include "geometry/GeometricModel.h"
 // ispc exports
 #include "Renderer_ispc.h"
 // ospray
@@ -24,94 +13,126 @@
 
 namespace ospray {
 
-  std::string Renderer::toString() const 
-  {
-    return "ospray::Renderer";
-  }
+Renderer::Renderer()
+{
+  managedObjectType = OSP_RENDERER;
+}
 
-  void Renderer::commit()
-  {
-    autoEpsilon = getParam1i("autoEpsilon", true);
-    epsilon = getParam1f("epsilon", 1e-6f);
-    spp = std::max(1, getParam1i("spp", 1));
-    const int32 maxDepth = std::max(0, getParam1i("maxDepth", 20));
-    const float minContribution = getParam1f("minContribution", 0.001f);
-    errorThreshold = getParam1f("varianceThreshold", 0.f);
-    maxDepthTexture = (Texture2D*)getParamObject("maxDepthTexture", nullptr);
-    model = (Model*)getParamObject("model", getParamObject("world"));
+std::string Renderer::toString() const
+{
+  return "ospray::Renderer";
+}
 
-    if (maxDepthTexture) {
-      if (maxDepthTexture->type != OSP_TEXTURE_R32F
-          || !(maxDepthTexture->flags & OSP_TEXTURE_FILTER_NEAREST)) {
-        static WarnOnce warning("maxDepthTexture provided to the renderer "
-                                "needs to be of type OSP_TEXTURE_R32F and have "
-                                "the OSP_TEXTURE_FILTER_NEAREST flag");
-      }
-    }
+void Renderer::commit()
+{
+  spp = std::max(1, getParam<int>("pixelSamples", 1));
+  const int32 maxDepth = std::max(0, getParam<int>("maxPathLength", 20));
+  const float minContribution = getParam<float>("minContribution", 0.001f);
+  errorThreshold = getParam<float>("varianceThreshold", 0.f);
 
-    vec3f bgColor3 = getParam3f("bgColor", vec3f(getParam1f("bgColor", 0.f)));
-    bgColor = getParam4f("bgColor", vec4f(bgColor3, 0.f));
+  maxDepthTexture = (Texture2D *)getParamObject("map_maxDepth");
+  backplate = (Texture2D *)getParamObject("map_backplate");
 
-    if (getIE()) {
-      ManagedObject* camera = getParamObject("camera");
-      if (model) {
-        const float diameter = model->bounds.empty() ?
-                               1.0f : length(model->bounds.size());
-        epsilon *= diameter;
-      }
-
-      ispc::Renderer_set(getIE()
-          , model ? model->getIE() : nullptr
-          , camera ? camera->getIE() : nullptr
-          , autoEpsilon
-          , epsilon
-          , spp
-          , maxDepth
-          , minContribution
-          , (ispc::vec4f&)bgColor
-          , maxDepthTexture ? maxDepthTexture->getIE() : nullptr
-          );
+  if (maxDepthTexture) {
+    if (maxDepthTexture->format != OSP_TEXTURE_R32F
+        || maxDepthTexture->filter != OSP_TEXTURE_FILTER_NEAREST) {
+      static WarnOnce warning(
+          "maxDepthTexture provided to the renderer "
+          "needs to be of type OSP_TEXTURE_R32F and have "
+          "the OSP_TEXTURE_FILTER_NEAREST flag");
     }
   }
 
-  Renderer *Renderer::createInstance(const char *type)
-  {
-    return createInstanceHelper<Renderer, OSP_RENDERER>(type);
+  vec3f bgColor3 = getParam<vec3f>(
+      "backgroundColor", vec3f(getParam<float>("backgroundColor", 0.f)));
+  bgColor = getParam<vec4f>("backgroundColor", vec4f(bgColor3, 0.f));
+
+  materialData = getParamDataT<Material *>("material");
+
+  if (materialData)
+    ispcMaterialPtrs = createArrayOfIE(*materialData);
+  else
+    ispcMaterialPtrs.clear();
+
+  if (getIE()) {
+    ispc::Renderer_set(getIE(),
+        spp,
+        maxDepth,
+        minContribution,
+        (ispc::vec4f &)bgColor,
+        backplate ? backplate->getIE() : nullptr,
+        ispcMaterialPtrs.size(),
+        ispcMaterialPtrs.data(),
+        maxDepthTexture ? maxDepthTexture->getIE() : nullptr);
+  }
+}
+
+Renderer *Renderer::createInstance(const char *type)
+{
+  return createInstanceHelper<Renderer, OSP_RENDERER>(type);
+}
+
+void Renderer::renderTile(FrameBuffer *fb,
+    Camera *camera,
+    World *world,
+    void *perFrameData,
+    Tile &tile,
+    size_t jobID) const
+{
+  ispc::Renderer_renderTile(getIE(),
+      fb->getIE(),
+      camera->getIE(),
+      world->getIE(),
+      perFrameData,
+      (ispc::Tile &)tile,
+      jobID);
+}
+
+float Renderer::renderFrame(FrameBuffer *fb, Camera *camera, World *world)
+{
+  return TiledLoadBalancer::instance->renderFrame(fb, this, camera, world);
+}
+
+OSPPickResult Renderer::pick(
+    FrameBuffer *fb, Camera *camera, World *world, const vec2f &screenPos)
+{
+  OSPPickResult res;
+
+  res.instance = nullptr;
+  res.model = nullptr;
+  res.primID = -1;
+
+  int instID = -1;
+  int geomID = -1;
+  int primID = -1;
+
+  ispc::Renderer_pick(getIE(),
+      fb->getIE(),
+      camera->getIE(),
+      world->getIE(),
+      (const ispc::vec2f &)screenPos,
+      (ispc::vec3f &)res.worldPosition[0],
+      instID,
+      geomID,
+      primID,
+      res.hasHit);
+
+  if (res.hasHit) {
+    auto *instance = (*world->instances)[instID];
+    auto *group = instance->group.ptr;
+    auto *model = (*group->geometricModels)[geomID];
+
+    instance->refInc();
+    model->refInc();
+
+    res.instance = (OSPInstance)instance;
+    res.model = (OSPGeometricModel)model;
+    res.primID = static_cast<uint32_t>(primID);
   }
 
-  void Renderer::renderTile(void *perFrameData, Tile &tile, size_t jobID) const
-  {
-    ispc::Renderer_renderTile(getIE(),perFrameData,(ispc::Tile&)tile, jobID);
-  }
+  return res;
+}
 
-  void *Renderer::beginFrame(FrameBuffer *fb)
-  {
-    this->currentFB = fb;
-    fb->beginFrame();
-    return ispc::Renderer_beginFrame(getIE(),fb->getIE());
-  }
+OSPTYPEFOR_DEFINITION(Renderer *);
 
-  void Renderer::endFrame(void *perFrameData, const int32 /*fbChannelFlags*/)
-  {
-    ispc::Renderer_endFrame(getIE(),perFrameData);
-  }
-
-  float Renderer::renderFrame(FrameBuffer *fb, const uint32 channelFlags)
-  {
-    return TiledLoadBalancer::instance->renderFrame(this,fb,channelFlags);
-  }
-
-  OSPPickResult Renderer::pick(const vec2f &screenPos)
-  {
-    assert(getIE());
-
-    OSPPickResult res;
-    ispc::Renderer_pick(getIE(),
-                        (const ispc::vec2f&)screenPos,
-                        (ispc::vec3f&)res.position,
-                        res.hit);
-
-    return res;
-  }
-
-} // ::ospray
+} // namespace ospray
