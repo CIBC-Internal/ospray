@@ -31,4 +31,4 @@ rm -rf *
 
 cmake ../scripts/superbuild
 
-make -j4 && make test
+make -j4
