@@ -18,9 +18,6 @@ jobs:
     - name: make
       working-directory: build
       run: make -j2
-    - name: make test
-      working-directory: build
-      run: make test
       
   mac-build:
 
@@ -33,6 +30,3 @@ jobs:
     - name: make
       working-directory: build
       run: make -j2
-    - name: make test
-      working-directory: build
-      run: make test
