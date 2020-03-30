@@ -9,11 +9,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts/superbuild/dependencies)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts/superbuild/)
 
-if(NOT CMAKE_INSTALL_PREFIX)
+#if(NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX
       "${CMAKE_BINARY_DIR}/install"
       CACHE STRING "Final install location." FORCE)
-endif()
+#endif()
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -81,9 +81,12 @@ option(INSTALL_IN_SEPARATE_DIRECTORIES
 ## Setup top-level variables ##
 
 set(installDir ${CMAKE_INSTALL_PREFIX})
+message(${installDir})
 
 get_filename_component(INSTALL_DIR_ABSOLUTE
   ${installDir} ABSOLUTE BASE_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+message(${INSTALL_DIR_ABSOLUTE})
 
 if (${CMAKE_VERSION} VERSION_GREATER 3.11.4)
   set(PARALLEL_JOBS_OPTS -j ${BUILD_JOBS})
