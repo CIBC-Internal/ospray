@@ -6,6 +6,8 @@
 cmake_minimum_required(VERSION 3.1)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts/superbuild/dependencies)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts/superbuild/)
 
 if(NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX
@@ -112,7 +114,7 @@ if (BUILD_OIDN)
 endif()
 
 if (NOT BUILD_DEPENDENCIES_ONLY)
-  include(build_ospray.cmake)
+  include(build_ospray)
   if (BUILD_OSPRAY_MODULE_MPI)
     include(build_module_mpi.cmake)
   endif()
