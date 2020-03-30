@@ -65,7 +65,7 @@ set(OSPRAY_ROOT ${CURRENT_ROOT_INSTALL_DIR})
 
 # Set the include directories for OSPRay (itself).
 set(OSPRAY_INCLUDE_DIR "${OSPRAY_ROOT}/include")
-if (NOT EXISTS ${OSPRAY_INCLUDE_DIR}/ospray/version.h)
+if (NOT EXISTS ${OSPRAY_INCLUDE_DIR}/version.h)
   ospray_report_not_found(
     "OSPRay install root:  ${OSPRAY_ROOT}, "
     "determined from relative path from osprayConfg.cmake install location:  "
@@ -120,6 +120,9 @@ endif()
 
 # Include macros for finding embree
 include(ospray_macros)
+
+# SCIRun will always have this on
+set(OSPRAY_INSTALL_DEPENDENCIES ON)
 
 if (OSPRAY_INSTALL_DEPENDENCIES)
   # Dependencies installed with OSPRay
